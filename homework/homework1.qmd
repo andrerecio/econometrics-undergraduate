@@ -1,0 +1,371 @@
+---
+title: "Homework N.1"
+subtitle: "College GPA"
+author: "Andrea Recine"
+date: today
+lang: it
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenuti"
+    toc-location: right       
+    number-sections: true
+    
+    # Codice
+    code-fold: false
+    code-tools: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+    
+    # Output
+    embed-resources: true
+    
+    # Tipografia
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+```{r}
+#| include: false
+#| message: false
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(dslabs)
+library(fixest)
+library(modelsummary)
+```
+
+## Istruzioni {.center}
+
+- Completate gli esercizi usando R
+- Per ogni esercizio mostrate il codice e commentate i risultati
+
+---
+
+
+## College GPA:
+
+`gpa1` contiene la media dei voti durante il college ($colGPA$), scuola superiore GPA ($hsGPA$) e l'achievement test score ($ACT$) di 141 studenti di grandi università. 
+
+
+$colGPA$ e $hsGPA$ sono in scala di quattro punti.
+
+$ACT$ (American College Testing) è un test standardizzato diffuso negli USA per l'ammissione al College. Composto da 4 sezioni va da una scala da 1 a 36.
+
+```{r}
+data("gpa1", package = "wooldridge")
+```
+
+```{r}
+head(gpa1)
+```
+
+```{r}
+# Statistiche descrittive
+statgpa <- gpa1 %>%
+       summarise(
+       colgpa_mean = mean(colGPA, na.rm = TRUE),
+       hsgpa_mean = mean(hsGPA, na.rm = TRUE),
+       act_mean = mean(ACT, na.rm = TRUE),
+  )
+
+# Visualizzazione dei risultati
+statgpa %>%
+  kable(caption = "Statistiche descrittive",
+        digits = 2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+```{r}
+summary(gpa1$colGPA)
+summary(gpa1$hsGPA)
+```
+
+### Esercizio 1:
+
+Considerate la seguente regressione:
+$$
+colGPA = \beta_0 + \beta_1 hsGPA_i + \beta_2 ACT_i + u_i
+$$
+
+Stimatela usando `fixest` e interpretate i coefficienti di $hsGPA$ e $ACT$.
+
+```{r}
+reg_gpa1 <- feols(colGPA ~ hsGPA + ACT, data = gpa1, vcov = "hetero")
+modelsummary(list("colGPA" = reg_gpa1), output = "markdown", gof_omit = "AIC|BIC|RMSE")
+```
+
+A parità di $ACT$, un punto in più di high school GPA è associato, in media, a 0.453 punti in più di $colGPA$.
+
+
+**Nota**: il valore massimo di $hsGPA$ è 4.
+
+
+$R^2$: $hsGPA$ e $ACT$ insieme spiegano il 17.6 \% della variazione di $colGPA$.
+
+
+Cambiamo la scala di $hsGPA$
+```{r}
+gpa1 <- gpa1 %>%
+  mutate(hsGPA100 = hsGPA *25)
+```
+
+```{r}
+reg_gpa2 <- feols(colGPA ~ hsGPA100 + ACT, data = gpa1, vcov = "hetero")
+modelsummary(list("colGPA100" = reg_gpa2), output = "markdown", gof_omit = "AIC|BIC|RMSE")
+```
+
+Un aumento di 1 punto (su scala fino a 100) di $hsGPA$ è associato, in media, a un aumento di 0.0181 punti in $colGPA$.
+
+Come prima 0.0181 = 0.453/25
+
+Aggiungiamo come regressore $skipped$ che rappresenta la media di lezioni perse (saltate) a settimana:
+
+$$
+colGPA = \beta_0 + \beta_1 hsGPA_i + \beta_2 ACT_i + \beta_3 skipped_i + u_i
+$$
+
+
+```{r}
+reg_gpa3 <- feols(colGPA ~ hsGPA + ACT + skipped, data = gpa1, vcov = "hetero")
+modelsummary(list("colGPA" = reg_gpa1, "colGPA" = reg_gpa3), output ="markdown", gof_omit = "AIC|BIC|RMSE")
+```
+
+Un aumento di 1 punto di $hsGPA$ è associato, in media, a un aumento di 0.412 punti in $colGPA$ a parità di $ACT$ e $skipped$.
+
+E se fossimo interessati altri due coefficienti?
+
+- Un aumento di 1 punto in $ACT$, a parità di $hsGPA$ e $skipped$, è associato a un aumento, in media, di 0.015 punti in $colGPA$. t-statistic è 1.36, cosa significa? 
+
+- A parità di $hsGPA$ e $ACT$, una lezione persa (saltata) in più a settimana è associata a un calo, in media, di 0.083 punti in $colGPA$.
+
+### Effetti del PC su college GPA
+
+Regrediamo $colGPA$ su una variabile dummy $PC$ che è uguale ad uno se lo studente ha un personal computer.
+
+Stimiamo le seguenti regressioni:
+
+- `reg_gpa` regressione lineare semplice
+- `reg_gpa_pc` regressione con $hsGPA$ e $ACT$
+- `reg_gpa_pc3` regressione di $hsGPA$ su $ACT$, $mothcoll$ (= 1 se la madre ha almeno una laurea triennale, BA) e $fathcoll$ (= 1 se il padre ha almeno una laurea triennale, BA).
+
+```{r}
+reg_gpa_pc1 <- feols(colGPA ~ PC, data = gpa1, vcov = "hetero")
+reg_gpa_pc2 <- feols(colGPA ~ PC + hsGPA + ACT , data = gpa1, vcov = "hetero")
+reg_gpa_pc3 <- feols(colGPA ~ PC + hsGPA + ACT + mothcoll + fathcoll , data = gpa1, vcov = "hetero")
+modelsummary(list("colGPA" = reg_gpa_pc1, "colGPA" = reg_gpa_pc2, "colGPA" = reg_gpa_pc3), output = "markdown", gof_omit = "AIC|BIC|RMSE")
+
+```
+
+- Prima regressione: Uno studente che possiede un PC ha, in media, un $colGPA$ più alto di circa 0.17 punti rispetto a uno studente che non lo possiede
+
+- Seconda regressione: A parità di $hsGPA$ e di punteggio $ACT$, uno studente che possiede un PC ha, in media, $colGPA$ più alto di circa 0.16 punti rispetto a uno studente che non lo possiede.
+
+- Terza regressione:  A parità di $hsGPA$, punteggio $ACT$ e istruzione dei genitori ($mothcoll$ e $fathcoll$), uno studente che possiede un PC ha, in media, $colGPA$ più alto di circa 0.15 punti rispetto a uno studente che non lo possiede.
+
+
+
+
+
+
+
+
+
+
+## Dati da `dslabs`
+
+Il dataset `gapminder` contiene dati su salute e sviluppo economico per paese e anno.
+
+```{r}
+library(dslabs)
+head(gapminder)
+```
+
+Variabili principali:
+
+- `country` — paese
+- `year` — anno
+- `life_expectancy` — aspettativa di vita (anni)
+- `gdp` — PIL totale (dollari)
+- `population` — popolazione
+- `continent` — continente
+
+---
+
+## Selezione del campione
+
+Lavoriamo con un singolo anno per evitare la dimensione panel. Filtriamo il **2011** e rimuoviamo le osservazioni mancanti:
+
+```{r}
+gap2011 <- gapminder |>
+  filter(year == 2011) |>
+  filter(!is.na(gdp), !is.na(life_expectancy), !is.na(population)) |>
+  mutate(gdp_pc = gdp / population)   # PIL pro capite
+```
+
+- `filter()` seleziona le righe che soddisfano una condizione
+- `!is.na()` rimuove i valori mancanti
+- `mutate()` crea nuove variabili
+
+---
+
+## Esercizio 1 — Statistiche Descrittive
+
+Calcolate media, mediana e deviazione standard di `life_expectancy` e `gdp_pc`:
+
+```{r}
+#| eval: false
+gap2011 |>
+  summarise(
+    le_mean    = mean(...),
+    le_median  = median(...),
+    le_sd      = sd(...),
+    gdp_mean   = mean(...),
+    gdp_median = median(...),
+    gdp_sd     = sd(...)
+  )
+```
+
+---
+
+## Esercizio 2 — Statistiche per Continente
+
+Calcolate media e mediana di `life_expectancy` e `gdp_pc` **per continente**:
+
+```{r}
+#| eval: false
+gap2011 |>
+  group_by(...) |>
+  summarise(
+    le_mean    = mean(...),
+    le_median  = median(...),
+    gdp_mean   = mean(...),
+    gdp_median = median(...)
+  )
+```
+
+- `group_by()` raggruppa i dati per una variabile categorica prima di `summarise()`
+
+---
+
+## Esercizio 3 — Distribuzione di `life_expectancy`
+
+Costruite un istogramma di `life_expectancy` e un boxplot per continente:
+
+```{r}
+#| eval: false
+# Istogramma
+ggplot(gap2011, aes(x = life_expectancy)) +
+  geom_histogram(fill = "lightblue", color = "black", bins = 20) +
+  labs(title = "Distribuzione dell'aspettativa di vita (2011)",
+       x = "Aspettativa di vita (anni)", y = "Frequenza") +
+  theme_minimal()
+
+# Boxplot per continente
+ggplot(gap2011, aes(x = ..., y = life_expectancy, fill = continent)) +
+  geom_boxplot() +
+  labs(title = "Aspettativa di vita per continente (2011)",
+       x = "Continente", y = "Aspettativa di vita (anni)") +
+  theme_minimal()
+```
+
+---
+
+## Esercizio 4 — Scatterplot
+
+Costruite uno scatterplot di `life_expectancy` (asse y) su `gdp_pc` (asse x). Colorate i punti per continente.
+
+Cosa osservate? La relazione sembra lineare?
+
+```{r}
+#| eval: false
+ggplot(gap2011, aes(x = gdp_pc, y = life_expectancy, color = continent)) +
+  geom_point(...) +
+  labs(title = "PIL pro capite e aspettativa di vita (2011)",
+       x = "PIL pro capite", y = "Aspettativa di vita (anni)") +
+  theme_minimal()
+```
+
+---
+
+## Esercizio 5 — Scala Logaritmica
+
+Ripetete il grafico precedente usando `log(gdp_pc)` sull'asse x:
+
+```{r}
+#| eval: false
+ggplot(gap2011, aes(x = log(gdp_pc), y = life_expectancy, color = continent)) +
+  geom_point(...) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linewidth = 0.5) +
+  labs(title = "Log PIL pro capite e aspettativa di vita (2011)",
+       x = "Log PIL pro capite", y = "Aspettativa di vita (anni)") +
+  theme_minimal()
+```
+
+Come cambia la relazione rispetto al grafico precedente?
+
+---
+
+## Esercizio 6 — Regressione Base
+
+Stimate la seguente regressione con errori standard robusti:
+
+$$life\_expectancy_i = \beta_0 + \beta_1 \log(gdp\_pc_i) + u_i$$
+
+```{r}
+#| eval: false
+gap2011 <- gap2011 |>
+  mutate(log_gdp_pc = log(gdp_pc))
+
+reg1 <- feols(life_expectancy ~ log_gdp_pc, data = gap2011, vcov = "hetero")
+reg1
+```
+
+**Domande:**
+
+1. Come si interpreta $\hat{\beta}_1$? *(attenzione: $x$ è in log)*
+2. Il coefficiente è statisticamente significativo al 5%?
+3. Qual è il valore di $R^2$?
+
+---
+
+## Esercizio 7 — Dummy per Continente
+
+Aggiungete `continent` come regressore:
+
+$$life\_expectancy_i = \beta_0 + \beta_1 \log(gdp\_pc_i) + \sum_{j} \gamma_j \, continent_{ij} + u_i$$
+
+```{r}
+#| eval: false
+reg2 <- feols(life_expectancy ~ log_gdp_pc + continent,
+              data = gap2011, vcov = "hetero")
+
+modelsummary(list("Base" = reg1, "Con continente" = reg2),
+             gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+**Domande:**
+
+1. Qual è la categoria di riferimento (*base category*)?
+2. Come cambia $\hat{\beta}_1$ rispetto al modello base? Perché?
+3. Come cambia $R^2$?

@@ -1,0 +1,278 @@
+---
+title: "Esercitazione N.6"
+subtitle: "Linear Probability Model (LPM)"
+author: "Andrea Recine"
+date: today
+lang: it
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenuti"
+    toc-location: right       
+    number-sections: true
+    
+    # Codice
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+    
+    # Output
+    embed-resources: true
+    
+    # Tipografia
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+## Setup
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(modelsummary)
+library(fixest)
+library(wooldridge)
+```
+
+
+## Linear Probability Model (LPM)
+
+
+Stimiamo il seguente modello di probabilità lineare (LPM) che assume una relazione lineare tra le variabili esplicative e la probabilità dell'evento:
+$$
+\Pr(Y=1 \mid X_1, \dots, X_k) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \beta_k X_k
+$$
+
+Implicazione, sotto assunzione $\mathbb{E}(u_i \mid X_i) = 0$:
+$$
+\mathbb{E}(Y \mid X = x) = \Pr(Y = 1 \mid X = x)
+$$
+
+cioè il valore atteso condizionato coincide con la probabilità che $Y = 1$ dato $X = x$.
+
+$\beta_1$ rappresenta la variazione della probabilità che $Y = 1$ per una variazione unitaria in $X$, o più generalmente:
+
+$$
+\beta_1 = \frac{\Pr(Y = 1 \mid X = x + \Delta x) - \Pr(Y = 1 \mid X = x)}{\Delta x}
+$$
+
+La procedura di stima tramite OLS resta invariata.
+
+Il LPM è semplice da stimare e interpretare. Tuttavia, può produrre probabilità previste inferiori a zero o superiori a uno e gli effetti marginali sono costanti (a differenza dei modelli logit e probit).
+
+::: {.callout-important title="Attenzione: l'eteroschedasticità è intrinseca nel LPM"}
+
+Poiché $Y$ è una variabile binaria $(0/1)$, condizionatamente a $X$ segue una distribuzione di Bernoulli con parametro $p(X) = \Pr(Y=1 \mid X)$. Di conseguenza, la varianza dell'errore $u = Y - \mathbb{E}(Y \mid X)$ è:
+
+$$
+\mathrm{Var}(u \mid X) = p(X)\bigl(1 - p(X)\bigr)
+$$
+
+La varianza dipende da $X$ **per costruzione**: è una conseguenza diretta della natura binaria della variabile dipendente. Gli errori standard OLS classici non sono quindi validi e si usano **sempre** errori standard robusti all'eteroschedasticità. Come abbiamo visto è prassi standard usare errori standard robusti all'eteroschedasticità nel modello di regressione lineare visto che sono validi indipendentemente dalla forma di eteroschedasticità presente.
+
+:::
+
+
+## Dataset `alcohol`
+
+
+Carichiamo i dati `alcohol` che contengono 9822 osservazioni e 33 variabili.
+
+```{r}
+data("alcohol", package = "wooldridge")
+head(alcohol)
+```
+
+### Descrizione delle variabili
+
+| Variabile   | Descrizione                                                                               |
+| :---------- | :---------------------------------------------------------------------------------------- |
+| $abuse$     | Variabile dummy (1=Abusa di Alcol, 0=Non abusa).                                  |
+| $employ$    | Variabile dipendente dummy (1=Occupato, 0=Non occupato).                              |
+| $married$   | Variabile dummy (1=Sposato, 0=Non sposato).                    |
+| $educ$      | Anni di istruzione.       |
+| $age$       | Età in anni.       |
+
+
+
+In altre parole, la nostra variabile dipendente, $Y$, è una variabile dummy che assume solo due valori (0-1).
+
+
+```{r}
+datasummary_skim(alcohol)
+```
+
+
+```{r}
+reg_lpm_alcohol <- feols(employ ~ abuse + educ + age + married, data = alcohol, vcov = "hetero")
+modelsummary(list("Employ" = reg_lpm_alcohol), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+**Interpretazione dei coefficienti:**
+
+- Coefficiente di $abuse$ pari a -0.018: aver abusato di alcol è associato a una probabilità di essere occupato **inferiore** di circa 1.8 punti percentuali rispetto a un uomo che non ha abusato di alcol, a parità di età, anni di istruzione e stato coniugale.
+
+- Coefficiente di $educ$ pari a 0.017: ogni anno aggiuntivo di istruzione è associato a un **aumento** della probabilità di essere occupato di 1.7 punti percentuali, a parità di età, abuso di alcol e stato coniugale.
+
+- Coefficiente di $age$ pari a -0.003: ogni anno aggiuntivo di età è associato a una probabilità di essere occupato **inferiore** di circa 0.3 punti percentuali, a parità di abuso di alcol, anni di istruzione e stato coniugale.
+
+- Coefficiente di $married$ pari a 0.084: essere sposato è associato a una probabilità di essere occupato superiore di 8.4 punti percentuali rispetto a un uomo non sposato, a parità di età, abuso di alcol e anni di istruzione.
+
+In questo caso a differenza dei modelli logit e probit, gli effetti marginali sono costanti e non dipendono dai valori delle altre variabili esplicative. I coefficienti stimati rappresentano direttamente l'effetto marginale di una variazione unitaria nella variabile esplicativa sulla probabilità che la variabile dipendente assuma il valore 1, a parità delle altre variabili.
+
+
+
+::: {.callout-note title="Nota"}
+Attenzione alle variabili percentuali espresse in forma decimale (ad esempio 0.26 che rappresenta il 26%). `pirat` (rapporto tra pagamenti e reddito) nella Lezione *Analisi della Concessione di Mutui su dati HMDA*.
+
+Se il coefficiente stimato associato a `pirat` fosse 0.5, allora un aumento di 1 punto percentuale in `pirat` è associato a un aumento di 0.5 punti percentuali nella probabilità di concessione del mutuo. Questo perché 1 punto percentuale è rappresentato come 0.01 in forma decimale, quindi l'effetto marginale sarebbe 0.5 $\times$ 0.01 = 0.005, ovvero un aumento di 0.5 punti percentuali nella probabilità di concessione del mutuo.
+:::
+
+
+### Probabilità predette
+
+Consideriamo la probabilità predetta di essere occupato per un uomo di 30 anni, sposato, con 12 anni di istruzione e che non ha abusato di alcol:
+
+```{r}
+predict(reg_lpm_alcohol, newdata = 
+        data.frame(abuse = 0, educ = 12, age = 30, married = 1))
+```
+
+
+E la probabilità predetta di essere occupato per un uomo di 30 anni, non sposato, con 10 anni di istruzione e che ha abusato di alcol:
+
+```{r}
+predict(reg_lpm_alcohol, newdata = 
+        data.frame(abuse = 1, educ = 10, age = 30, married = 0))
+```
+
+
+La differenza tra le due probabilità predette è di circa 13.56 punti percentuali (0.9246885 - 0.7891304 = 0.1355581).
+
+
+Per l'esame dovete essere in grado di svolgere questo tipo di calcoli a mano, sostituendo i valori delle variabili esplicative nella formula del modello di probabilità lineare stimato.
+
+
+::: {.callout-important title="Punti percentuali vs variazioni percentuali"}
+
+Quando interpretiamo i coefficienti di un LPM è essenziale distinguere due concetti spesso confusi:
+
+- **Punti percentuali (p.p.)**: differenza *assoluta* tra due probabilità (o percentuali). Nell'esempio sopra la probabilità predetta passa da $0.7891$ a $0.9247$: la differenza è $0.9247 - 0.7891 = 0.1356$, cioè un aumento di circa **13.56 punti percentuali**.
+
+- **Variazione percentuale (%)**: variazione *relativa* rispetto al valore di partenza. La stessa transizione corrisponde a una variazione percentuale di
+$$
+\frac{0.9247 - 0.7891}{0.7891} \approx 0.1718 = 17.18\%
+$$
+cioè la probabilità di essere occupato è circa il 17.2% **più alta** rispetto al punto di partenza.
+
+I coefficienti di un LPM si esprimono **sempre in punti percentuali**, non in variazioni percentuali: il coefficiente $\hat{\beta}_j$ misura di quanto cambia la probabilità $\Pr(Y=1 \mid X)$ in valore assoluto, non in proporzione al suo livello iniziale.
+
+:::
+
+
+## Probabilità di essere arrestato `crime1`
+
+
+```{r}
+data("crime1", package = "wooldridge")
+head(crime1)
+```
+
+
+$narr86$ numero di volte arrestato nel 1986. A partire da questa variabile, creiamo una variabile dummy `arrested` che assume valore 1 se un individuo è stato arrestato almeno una volta nel 1986 e 0 altrimenti.
+
+```{r}
+crime1 <- crime1 %>%
+  mutate(arrested = ifelse(narr86 > 0, 1, 0))
+```
+
+Le altre variabili sono:
+
+
+| Variabile   | Descrizione                                                                               |
+| :---------- | :---------------------------------------------------------------------------------------- |
+| $pcnv$     | Proporzione di arresti precedenti che hanno portato a una condanna.                      |
+| $avgsen$    | Sentenza media scontata da condanne precedenti (in mesi).                              |
+| $tottime$   | Totale dei mesi trascorsi in prigione dai 18 anni in poi, prima del 1986.                    |
+| $ptime86$     | Mesi trascorsi in prigione nel 1986.       |
+| $qemp86$     | Numero di trimestri in cui l'uomo è stato impiegato nel 1986.       |
+| $black$     | Variabile dummy (1=Persona di colore, 0=Altra).       |
+| $hispan$     | Variabile dummy (1=Persona di origine ispanica, 0=Altra).       |
+
+
+
+
+::: {.callout-note title="Come è costruita `pcnv`"}
+
+Per ogni individuo $i$, la variabile è definita come
+
+$$
+pcnv_i = \frac{\text{numero di arresti precedenti di } i \text{ con condanna}}{\text{numero totale di arresti precedenti di } i}
+$$
+
+È quindi una **proporzione individuale espressa in forma decimale** (analoga a `pirat` nella lezione sui mutui), compresa tra 0 e 1 — non una percentuale.
+
+:::
+
+
+
+
+Stimiamo il seguente LPM:
+
+```{r}
+reg_lpm_crime <- feols(arrested ~ pcnv + avgsen + tottime + ptime86 + qemp86 + black + hispan, data = crime1, vcov = "hetero")
+modelsummary(list("Arrested" = reg_lpm_crime), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+
+La variabile $pcnv$ è una proporzione compresa tra zero e uno:
+
+- **Lettura 1 (sull'intero range della variabile)**: passare $pcnv$ da 0 a 1 significa passare da "nessuno degli arresti precedenti ha portato a una condanna" a "tutti gli arresti precedenti hanno portato a una condanna". Un cambiamento così ampio riduce la probabilità di arresto solo di 15.2 punti percentuali.
+
+- **Lettura 2 (su 1 punto percentuale)**: poiché $pcnv$ è in forma decimale (esattamente come `pirat` nella lezione sui mutui), un aumento di "1 punto percentuale" corrisponde a $\Delta pcnv = 0.01$. La variazione predetta della probabilità di arresto è quindi $-0.152 \times 0.01 = -0.00152$, cioè **0.152 punti percentuali in meno**.
+
+
+Le due letture descrivono lo **stesso effetto marginale** ($-0.152$, costante per costruzione del LPM) espresso su unità di variazione diverse.
+
+
+$qemp86$ è il numero di trimestri di occupazione nel 1986 (da 0 a 4) e ha coefficiente -0.038. Possiamo leggerlo in due modi equivalenti, a parità delle altre variabili:
+
+
+- **Effetto di un trimestre in più**: passare da 0 a 1 trimestre di occupazione è associato a una probabilità di essere arrestato inferiore di circa 3.8 punti percentuali.
+
+
+- **Confronto tra i due estremi**: un uomo occupato in tutti e quattro i trimestri ha una probabilità di essere arrestato inferiore di circa 15.2 punti percentuali ($4 \times 0.038 = 0.152$) rispetto a un uomo mai occupato durante l'anno.
+
+
+La categoria omessa è quella degli uomini né di colore né di origine ispanica (bianchi/altra etnia, cioè $black=0$ e $hispan=0$): i coefficienti di $black$ e $hispan$ vanno letti **rispetto a questo gruppo di riferimento**.
+
+- Coefficiente di $black$ pari a 0.17: a parità delle altre variabili, un uomo di colore ha una probabilità di essere arrestato superiore di 17 punti percentuali rispetto a un uomo bianco/altra etnia.
+
+- Coefficiente di $hispan$ pari a 0.096: a parità delle altre variabili, un uomo di origine ispanica ha una probabilità di essere arrestato superiore di 9.6 punti percentuali rispetto a un uomo bianco/altra etnia.
+
+
+

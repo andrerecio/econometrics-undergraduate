@@ -1,0 +1,435 @@
+---
+title: "Esercitazioni di Econometria"
+subtitle: "Introduzione a R"
+author: "Econometria"
+date: today
+lang: it
+
+format:
+  revealjs:
+    theme: white
+    slide-number: c/t
+    highlight-style: github
+    code-line-numbers: false
+    transition: none
+    footer: "Econometria — Sapienza Università di Roma"
+    embed-resources: true
+    width: 1280
+    height: 720
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: ""
+    fig.align: "center"
+    fig.width: 9
+    fig.height: 5
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(wooldridge)
+```
+
+
+
+
+## Informazioni {.center}
+
+- **Materiale:** disponibile su [GitHub](https://andrerecio.github.io/econometria-triennale/) e Moodle
+- **Orari:** Calendario su Moodle e sito di Facoltà — eventuali variazioni saranno comunicate su Moodle
+- **Contatto:** [andrea.recine@uniroma1.it](mailto:andrea.recine@uniroma1.it)
+
+---
+
+## Cosa faremo?
+
+Imparare a **interpretare i risultati delle regressioni**
+
+- L'output delle regressioni è parte importante della prova scritta
+- La prova orale richiede una buona comprensione teorica
+
+---
+
+## Cosa potete fare?
+
+Sfruttare le esercitazioni per imparare a usare R, manipolare i dati, costruire grafici e interpretare i risultati
+
+> *"Data scientists spend 50-80% of their time collecting and preparing data, before it can be explored for useful nuggets."* — [NYT, 2014](https://www.nytimes.com/2014/08/18/technology/for-big-data-scientists-hurdle-to-insights-is-janitor-work.html)
+
+
+Oggi con LLMs cosa cambia?
+
+Divertitevi a sperimentare con il codice
+
+
+---
+
+
+## Programmazione
+
+Linguaggi di programmazione:
+
+- più diffusi open source: R, Python e Julia
+- più diffusi commerciali: Stata e Matlab
+
+
+Python è sempre più richiesto nel mercato del lavoro. R ha una comunità molto attiva in ambito accademico (e molti pacchetti per l'econometria)
+
+---
+
+## R
+
+Tutto il materiale è scritto in **R**:
+
+- [R](https://cran.r-project.org/) — linguaggio di programmazione
+- [RStudio](https://posit.co/download/rstudio-desktop/) — è un ambiente di sviluppo integrato (IDE) 
+
+Potete usare anche altri IDE come [VSCode](https://code.visualstudio.com/)
+
+I materiali e le slide sono prodotti con [Quarto](https://quarto.org/)
+
+---
+
+
+
+## Installare R e RStudio
+
+- Scaricate R da [CRAN](https://cran.r-project.org/)
+- Scaricate RStudio da [RStudio](https://posit.co/download/rstudio-desktop/)
+- Seguite le istruzioni di installazione per il vostro sistema operativo
+
+---
+
+## Struttura delle esercitazioni {.center}
+
+Ogni esercitazione è composta da:
+
+- File **HTML** — materiale di riferimento con codice e spiegazioni
+- **Script `.R`** — codice che potete eseguire (**run!**) se volete esercitarvi
+
+
+Su [GitHub](https://andrerecio.github.io/econometria-triennale/) trovate entrambi i file: HTML e script R.
+
+
+---
+
+## 📖 Le esercitazioni {.center}
+
+Le spiegazioni nei file **HTML** possono aiutarvi a capire meglio i risultati delle regressioni, ma per superare l'esame dovete anche studiare la teoria 
+
+
+## RStudio layout
+
+![](rstudio.png){fig-align="center" width=80%}
+
+---
+
+## 📝 Task 1
+
+- Aprire un nuovo script: `File > New File > R Script`
+- Eseguite il seguente codice (Ctrl + Invio o Cmd + Invio o Run)
+
+```{r}
+#| output-location: column
+x <- 1:10
+y <- x^2 
+plot(x, y)
+```
+
+
+---
+
+## 📦 Pacchetti R
+
+- Installare e caricare i pacchetti necessari:
+
+```{r}
+#| eval: false
+install.packages("tidyverse")
+install.packages("wooldridge")
+library(tidyverse)
+library(wooldridge)
+```
+
+- Non è necessario installare i pacchetti ogni volta, basta caricarli con `library()`
+
+---
+
+
+## 🌐 Tidyverse
+
+`tidyverse` è una raccolta di pacchetti R per analisi dei dati:
+
+- `dplyr` — manipolare i dati
+- `ggplot2` — grafici
+- `tidyr` — riorganizzare i dati
+- `readr` — importare CSV e altri file
+
+::: {.callout-tip}
+Potete caricare i pacchetti singolarmente: `library(ggplot2)`, `library(dplyr)` oppure tutti insieme con `library(tidyverse)`
+:::
+
+
+
+## 🗂️ Dataset
+
+- I dataset in R sono organizzati in **dataframe** (tabelle con righe e colonne)
+
+- `library(tidyverse)` usa il formato tibble, una versione migliorata di dataframe
+
+
+---
+
+
+## 🗂️ Dataset: `wage1` 
+```{r}
+data("wage1", package = "wooldridge")
+str(wage1)
+```
+
+---
+
+
+## 🧹 Tidying — manipolare i dati: `dplyr`
+
+
+
+1. `filter()`: seleziona osservazioni in base a una condizione
+2. `arrange()`: riordina le righe
+3. `select()`: seleziona variabili per nome
+4. `mutate()`: crea nuove variabili a partire da quelle esistenti
+5. `summarise()`: riduce i dati a un unico riepilogo
+6. `group_by()`: applica le funzioni precedenti a gruppi anziché all'intero dataset
+
+
+---
+
+
+
+## 🧹 Tidying — manipolare i dati
+
+Creiamo un nuovo dataset: solo chi ha più di 12 anni di istruzione:
+
+```{r}
+wage_educ_higher <- wage1 |>
+                   filter(educ > 12)
+head(wage_educ_higher)                   
+
+```
+
+
+- `|>` o `%>%` è l'operatore **pipe**: passa l'output di un'espressione come input della funzione successiva, concatenando più operazioni
+
+---
+
+
+
+## 📊 Summarising — statistiche descrittive
+
+```{r}
+wage1 |>
+  summarise(
+    wage_mean   = mean(wage),
+    wage_median = median(wage),
+    wage_sd     = sd(wage),
+    educ_mean   = mean(educ)
+  )
+```
+
+---
+
+## 📐 Intervallo di confidenza per la media
+
+$$\bar{x} \pm t_{\alpha/2, \, n-1} \cdot \frac{s}{\sqrt{n}}$$
+```{r}
+# calcolo "manuale" per wage 
+n    <- length(wage1$wage) # numero di osservazioni
+xbar <- mean(wage1$wage) # media campionaria di wage
+s    <- sd(wage1$wage) # deviazione standard campionaria di wage
+se   <- s / sqrt(n) # errore standard della media
+
+t_crit   <- qt(0.975, df = n - 1) # uguale a circa 1.96 (ricordatelo!)
+
+ci_lower <- xbar - t_crit * se # limite inferiore
+ci_upper <- xbar + t_crit * se # limite superiore
+
+c(media = xbar, lower = ci_lower, upper = ci_upper)
+
+
+```
+
+
+## 📐 Intervallo di confidenza per la media
+
+```{r}
+# usando il comando t.test()
+t.test(wage1$wage)
+```
+
+
+---
+
+
+
+## 📊 Summarising — per gruppi
+
+`group_by()` calcola le statistiche separatamente per ogni gruppo:
+
+```{r}
+wagediff <- wage1 |>
+  group_by(female) |>
+  summarise(
+    wage_mean = mean(wage),
+    wage_sd   = sd(wage),
+    n         = n()
+  )
+wagediff  
+```
+
+- `female = 0` → uomini, `female = 1` → donne
+- `n()` conta le osservazioni per gruppo
+
+---
+
+
+## 📐 Testare la differenza tra medie
+
+
+$$H_0: \mu_{uomini} - \mu_{donne} = 0 \qquad H_1: \mu_{uomini} - \mu_{donne} \neq 0$$
+
+La statistica test:
+
+$$t = \frac{\bar{Y}_{uomini} - \bar{Y}_{donne}}{SE(\bar{Y}_{uomini} - \bar{Y}_{donne})} \qquad SE = \sqrt{\frac{s^2_{uomini}}{n_{uomini}} + \frac{s^2_{donne}}{n_{donne}}}$$
+
+
+- $|t|$ > 1.96 → rifiutiamo $H_0$ al 5%
+
+
+
+---
+
+## 📐 Testare la differenza tra medie
+
+
+```{r}
+se <- sqrt(wagediff$wage_sd[1]^2 / wagediff$n[1] +
+           wagediff$wage_sd[2]^2 / wagediff$n[2])
+
+t_stat <- (wagediff$wage_mean[1] - wagediff$wage_mean[2]) / se
+t_stat
+```
+
+
+---
+
+## 📈 Visualising — distribuzione
+
+- ggplot2 è un pacchetto per creare grafici personalizzati basato sulla grammatica dei grafici (_gg_)
+
+```{r}
+#| output-location: slide
+ggplot(wage1, aes(x = wage)) +
+  geom_histogram(fill = "lightblue", color = "black", bins = 20) +
+  labs(title = "Distribuzione del salario orario",
+       x = "Salario orario (dollari)", y = "Frequenza") +
+  theme_minimal(base_size = 15)
+```
+
+---
+
+
+## 🚔 Data: polizia e crimine
+
+```{r}
+url_data <- "https://raw.githubusercontent.com/andrerecio/econometria-triennale/main/intro/crime2_clean.csv"
+
+crime <- read_csv(url_data, show_col_types = FALSE, na = ".")
+glimpse(crime)
+```
+
+- [Codebook](https://github.com/andrerecio/econometria-triennale/blob/main/intro/codebook_crime2.md) con le variabili
+
+
+## 👮 Polizia e crimine
+
+
+- Creiamo due nuove variabili: `violent` (crimini violenti per 100.000 abitanti) e `police` (poliziotti per 100.000 abitanti) per alcuni anni
+
+- Visualizziamo la relazione tra polizia e crimine violento
+
+```{r}
+#| output-location: slide
+crime_sub <- crime |>
+  filter(year == 1991) |> # solo nel 1991
+  mutate(
+    violent = (murder + rape + robbery + assault) / citypop * 100000,
+    police  = sworn / citypop * 100000
+  ) |>
+  drop_na(violent, police)
+
+ggplot(crime_sub, aes(x = police, y = violent)) +
+  geom_point(alpha = 0.8) +
+  labs(
+    x = "Poliziotti per 100.000 abitanti",
+    y = "Crimini violenti per 100.000 abitanti"
+  ) +
+  theme_minimal(base_size = 20)
+```
+
+
+##  🔍 Polizia e crimine
+
+- La figura mostra una correlazione **positiva** tra polizia e crimine: più polizia, più crimine?
+
+- In realtà, le città con più crimine assumono più poliziotti — è il crimine a causare più polizia, non il contrario
+
+
+
+## 📏 Covarianza e correlazione
+```{r}
+# covarianza
+cov(crime_sub$police, crime_sub$violent)
+
+# correlazione
+cor(crime_sub$police, crime_sub$violent)
+```
+
+- La **covarianza** misura l'associazione lineare tra due variabili
+
+- La **correlazione** è la covarianza standardizzata, compresa tra -1 e 1
+
+---
+
+## 📏 Covarianza
+
+$$\text{Cov}(X, Y) = \frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar{x})(y_i - \bar{y})$$
+```{r}
+x <- crime_sub$police
+y <- crime_sub$violent
+
+cov_manual <- sum((x - mean(x)) * (y - mean(y))) / (length(x) - 1)
+cor_manual <- cov_manual / (sd(x) * sd(y))
+
+c(covarianza = round(cov_manual, 2))
+c(correlazione = round(cor_manual, 6))
+```
+
+
+
+
+## Letture utili
+
+
+- [R for Data Science](https://r4ds.had.co.nz/transform.html) 
+- [ModernDive](https://moderndive.com/1-getting-started.html)
+
+---
+
+
+

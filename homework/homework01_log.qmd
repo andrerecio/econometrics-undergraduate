@@ -1,0 +1,171 @@
+---
+title: "Ripasso modelli log"
+author: "Andrea Recine"
+format: 
+  html:
+    toc: true
+    code-fold: false
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+**Pacchetti necessari:**
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(modelsummary)
+library(fixest)
+```
+
+**Per i dati:**
+```{r}
+#| warning: false
+library(wooldridge)
+```
+
+```{r}
+data("wage1", package = "wooldridge")
+```
+
+
+::: {.callout-note title="Specificazioni in log"}
+
+| Forma del modello       | Interpretazione                                                                 |
+|-------------------------|----------------------------------------------------------------------------------|
+| $\log(Y)$ ~ $X$         | Un'unità in più in $X$ determina una variazione di $100 \cdot \beta_1$\% in $Y$              |
+| $Y$ ~ $\log(X)$         | Un aumento dell'1\% in $X$ determina una variazione di $0{,}01 \cdot \beta_1$ in $Y$       |
+| $\log(Y)$ ~ $\log(X)$   | Un aumento dell'1\% in $X$ determina una variazione di $\beta_1$\% in $Y$                    |
+
+:::
+
+
+**3 casi con wage e educ:**
+
+```{r}
+reg_logwage <- feols(log(wage) ~ educ, data = wage1, vcov = "hetero")
+reg_wagelog <- feols(wage ~ log(educ), data = wage1, vcov = "hetero")
+reg_logwagelog <- feols(log(wage) ~ log(educ), data = wage1, vcov = "hetero")
+modelsummary(list("Log Wage" = reg_logwage, "Wage" = reg_wagelog, "Log Wage" =reg_logwagelog), output = "markdown", gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+- **Primo modello:** (log-level): Ad ogni anno in più di istruzione è associato in media un aumento dell'8.3 % del salario orario.
+
+- **Secondo modello:** (level-log): Un aumento del 1% degli anni di istruzione è associato ad un aumento, in media, del salario orario di 0.053 dollari. In modo equivalente un aumento del 10% degli anni di istruzione è associato ad un aumento, in media, il salario orario di 0.53$ (10 $\cdot$ 0.053).
+
+- **Terzo modello:** (log-log): Un aumento dell' 1% degli anni di istruzione è associato ad un aumento, in media, del salario orario dello 0.825 %.
+
+La scelta della specificazione (forma funzionale) dev’essere guidata dal ragionamento – quale interpretazione ha più senso?
+
+I logaritmi sono spesso utilizzati quando la variabile è in dollari (ad esempio wage o income) o variabili come popolazione (in particolare quando c'è abbastanza variazione).
+
+Sono meno usati per variabili misurate in anni o che sono già percentuali o proporzioni (ad esempio tasso di disoccupazione).
+
+
+::: {.callout-note title="Unità di misura della variabile dipendente"}
+
+Con le variabili espresse in log, il cambiamento di unità di misura è irrilevante. Provate ad esprimere in salario in centinaia di dollari creando $wage$/100 e fate la regressione su $educ$.
+Lo stesso vale se la $X$ e $Y$ sono entrambi in log.
+L'intercetta invece cambierà.
+:::
+
+
+
+::: {.callout-note title="Intervalli di confidenza"}
+
+Calcolate l'intervallo di confidenza al 95% per il coefficiente di $educ$ nella regressione Log Wage?
+
+Intervallo di confidenza relativo a 10 anni aggiuntivi di istruzione? Gli estremi superiori e inferiori saranno pari quello precedente per 10. Provate.
+:::
+
+
+**Cambiamento in $wage$**
+
+```{r}
+reg_logwage100 <- feols(log(wage/100) ~ educ, data = wage1, vcov = "hetero")
+reg_wagelog100 <- feols(wage/100 ~ log(educ), data = wage1, vcov = "hetero")
+reg_logwagelog100 <- feols(log(wage/100) ~ log(educ), data = wage1, vcov = "hetero")
+modelsummary(list("Log Wage" = reg_logwage100, "Wage" = reg_wagelog100, "Log Wage" =reg_logwagelog100), output = "markdown", gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+- Nel primo modello cambia l'intercetta
+- Nel secondo modello un aumento del 1% degli anni di istruzione aumenta $wage$ di (0.053/100) centinaia di dollari
+- Nel terzo modello cambia solo l'intercetta
+
+
+**Cambiamento in $educ$:**
+
+Esprimiamo gli anni di istruzioni in mesi di istruzione:
+
+
+```{r}
+wage1$educ12 <- wage1$educ * 12
+```
+
+```{r}
+reg_logwage12 <- feols(log(wage) ~ educ12, data = wage1, vcov = "hetero")
+reg_wagelog12 <- feols(wage ~ log(educ12), data = wage1, vcov = "hetero")
+reg_logwagelog12 <- feols(log(wage) ~ log(educ12), data = wage1, vcov = "hetero")
+
+modelsummary(list("Log Wage" = reg_logwage12, "Wage" = reg_wagelog12, "Log Wage" =reg_logwagelog12), output = "markdown", gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+Cosa è cambiato?
+
+- Un mese aggiuntivo di istruzione è associato ad un aumento del salario orario di circa il 0.7 %
+- Un aumento del'1% dei mesi di istruzione è associato ad un aumento del salario orario di 5.330/100 dollari
+- Un aumento del 1% dei mesi di istruzione è associato ad un aumento del salario dello 0.825%
+
+
+## Con altre variabili:
+
+```{r}
+reg_logwage_mul <- feols(log(wage) ~ educ + exper + tenure + female, data = wage1, vcov = "hetero")
+reg_wagelog_mul <- feols(wage ~ log(educ) + exper + tenure + female, data = wage1, vcov = "hetero")
+reg_logwagelog_mul <- feols(log(wage) ~ log(educ) + exper + tenure + female, data = wage1, vcov = "hetero")
+modelsummary(list("Log Wage" = reg_logwage_mul, "Wage" = reg_wagelog_mul, "Log Wage" =reg_logwagelog_mul), output = "markdown", gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+
+
+
+**Cambiamento in $wage$**
+
+```{r}
+reg_logwage100_mul <- feols(log(wage/100) ~ educ + exper + tenure + female, data = wage1, vcov = "hetero")
+reg_wagelog100_mul <- feols(wage/100 ~ log(educ) + exper + tenure + female, data = wage1, vcov = "hetero")
+reg_logwagelog100_mul <- feols(log(wage/100) ~ log(educ) + exper + tenure + female, data = wage1, vcov = "hetero")
+modelsummary(list("Log Wage" = reg_logwage100_mul, "Wage" = reg_wagelog100_mul, "Log Wage" =reg_logwagelog100_mul), output = "markdown", gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+
+**Cambiamento in $educ$:**
+
+Esprimiamo gli anni di istruzioni in mesi di istruzione:
+
+
+```{r}
+wage1$educ12 <- wage1$educ * 12
+```
+
+```{r}
+reg_logwage12_mul <- feols(log(wage) ~ educ12 + exper + tenure + female, data = wage1, vcov = "hetero")
+reg_wagelog12_mul <- feols(wage ~ log(educ12) + exper + tenure + female, data = wage1, vcov = "hetero")
+reg_logwagelog12_mul <- feols(log(wage) ~ log(educ12) + exper + tenure + female, data = wage1, vcov = "hetero")
+
+modelsummary(list("Log Wage" = reg_logwage12_mul, "Wage" = reg_wagelog12_mul, "Log Wage" =reg_logwagelog12_mul), output = "markdown", gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+::: {.callout-note title="Esercizio"}
+
+Confrontate le regressioni
+:::

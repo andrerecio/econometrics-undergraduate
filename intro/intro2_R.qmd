@@ -1,0 +1,188 @@
+---
+title: "Introduzione a R"
+subtitle: "Regressione 📉"
+author: "Econometria"
+date: today
+lang: it
+
+format:
+  revealjs:
+    theme: white
+    slide-number: c/t
+    highlight-style: github
+    code-line-numbers: false
+    transition: none
+    footer: "Econometria — Sapienza Università di Roma"
+    embed-resources: true
+    width: 1280
+    height: 720
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: ""
+    fig.align: "center"
+    fig.width: 9
+    fig.height: 5
+---
+
+
+
+```{r}
+#| include: false
+library(tidyverse)
+library(wooldridge)
+library(fixest)
+library(modelsummary)
+
+data("wage1", package = "wooldridge")
+```
+
+## Librerie e dati
+
+```{r}
+#| eval: false
+library(tidyverse)
+library(wooldridge)
+library(fixest)
+library(modelsummary)
+
+data("wage1", package = "wooldridge")
+```
+
+- `wooldridge` — libreria con dataset
+- `fixest` — regressione lineare con errori standard robusti
+- `modelsummary` — tabelle di regressione
+
+---
+
+## 🗂️ Struttura dei dati
+
+```{r}
+head(wage1)
+```
+
+Variabili che useremo:
+
+- `wage` — retribuzione oraria media (dollari, 1976)
+- `educ` — anni di istruzione
+
+
+---
+
+## 📊 Statistiche descrittive
+
+```{r}
+wage1 |>
+  summarise(
+    wage_mean   = mean(wage),
+    wage_median = median(wage),
+    wage_sd     = sd(wage),
+    educ_mean   = mean(educ),
+    educ_median = median(educ),
+    educ_sd     = sd(educ)
+  )
+```
+
+---
+
+## 📊 Visualizzazione dei dati
+```{r}
+#| layout-ncol: 2
+#| fig-width: 6
+#| fig-height: 4
+
+# Distribuzione del salario orario
+ggplot(wage1, aes(x = wage)) +
+  geom_histogram(fill = "lightblue", color = "black", bins = 20) +
+  labs(title = "Distribuzione del salario orario",
+        x = "Salario orario (dollari)", y = "Frequenza") +
+  theme_minimal(base_size = 13)
+
+# Distribuzione degli anni di istruzione
+ggplot(wage1, aes(x = educ)) +
+  geom_histogram(fill = "lightblue", color = "black", bins = 20) +
+  labs(title = "Distribuzione degli anni di istruzione", 
+       x = "Anni di istruzione", y = "Frequenza") +
+  theme_minimal(base_size = 13)
+```
+
+
+---
+
+## 🔍 Relazione tra wage ed educ
+
+- `method = "lm"` — aggiunge una linea di regressione lineare
+
+```{r}
+#| output-location: slide
+ggplot(wage1, aes(y = wage, x = educ)) + 
+  geom_point(color = "black", alpha = 0.4) + 
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  labs(x = "Anni di istruzione", 
+       y = "Salario orario (dollari)") +
+  theme_minimal(base_size = 13)
+```  
+
+
+
+---
+
+
+## 📉 Regressione — modello lineare semplice
+
+Stimiamo il modello di regressione lineare semplice:
+
+$$wage_i = \beta_0 + \beta_1 \, educ_i + u_i$$
+
+```{r}
+#| output-location: slide
+reg1 <- feols(wage ~ educ, data = wage1, vcov = "hetero")
+reg1
+```
+
+- `vcov = "hetero"` o `vcov = "hc1"` — errori standard robusti
+- comando Stata: `regress wage educ, robust`
+
+
+---
+
+## 📉 Regressione — comando `lm` di R
+
+- il comando base per la regressione lineare è `lm()`, ma non fornisce errori standard robusti (serve `vcovHC()` del pacchetto `sandwich`)
+
+```{r}
+reg_lm <- lm(wage ~ educ, data = wage1)
+summary(reg_lm)
+```
+
+---
+
+## 📋 Tabella della regressione
+
+- variabile dipendente: `wage`
+- errori standard robusti in parentesi
+
+::: {style="font-size: 0.85em"}
+```{r}
+modelsummary(list("wage" = reg1),gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+:::
+
+
+---
+
+
+
+## 📋 Tabella della regressione
+
+Il coefficiente di $educ$ rappresenta l’incremento medio del salario orario associato ad un anno in più di istruzione:
+
+- Un anno aggiuntivo di istruzione è **associato** a un aumento medio del salario orario di circa 0.54 dollari
+
+
+L'intercetta ($\beta_0$) rappresenta il salario orario medio predetto per un individuo con zero anni di istruzione

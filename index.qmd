@@ -1,0 +1,83 @@
+---
+title: "Esercitazioni di Econometria"
+subtitle: "Economia e Finanza · Sapienza Università di Roma · Facoltà di Economia"
+lang: it
+
+format:
+  html:
+    theme: cosmo
+    toc: false
+    embed-resources: true
+    fontsize: 1.25em
+    linestretch: 1.7
+
+---
+
+Materiale relativo alle esercitazioni del corso di **Econometria** 
+
+### Google Classroom
+
+Ulteriori comunicazioni relative al corso (esercitazioni, simulazioni, ecc.) saranno pubblicate su [Google Classroom](https://classroom.google.com/). Codice per accedere con account studenti Sapienza: `5na2ra5n`
+
+
+---
+
+
+### Installare R e RStudio
+
+1. Scarica e installa **R** da [cran.r-project.org](https://cran.r-project.org)
+2. Scarica e installa **RStudio** da [posit.co/download/rstudio-desktop](https://posit.co/download/rstudio-desktop)
+
+---
+
+## Introduzione a R
+
+| N. | Argomento | Materiali |
+|----|-----------|-----------|
+| 1 | Introduzione a R | [📊 Slide](intro/intro.html) · [Script R](intro/intro.R) |
+| 2 | Regressione con `fixest` | [📊 Slide](intro/intro2_R.html) · [Script R](intro/intro2.R) |
+
+
+---
+
+
+## Esercitazioni
+
+| N. | Argomento | Materiali |
+|----|-----------|-----------|
+| 1 | Regressione, variabili dummy e intervalli di confidenza | [📄 Note](esercitazione1/esercitazione1.html)  ·  [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione1/esercitazione1_script.R) |
+| 2 | Regressione multipla | [📄 Note](esercitazione2/esercitazione2.html) · [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione2/esercitazione2_script.R) |
+| 3 | Nonlinearità: specificazioni in log | [📄 Note](esercitazione3/esercitazione3.html) · [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione3/esercitazione3_script.R) |
+| 4 | Nonlinearità: polinomi | [📄 Note](esercitazione4/esercitazione4.html) · [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione4/esercitazione4_script.R) |
+| 5 | Nonlinearità: interazioni | [📄 Note](esercitazione5/esercitazione5.html) · [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione5/esercitazione5_script.R) |
+| 6 | Linear Probability Model (LPM) | [📄 Note](esercitazione6/esercitazione6.html) · [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione6/esercitazione6_script.R) |
+| 7 | Probit e Logit | [📄 Note](esercitazione7/esercitazione7.html) · [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione7/esercitazione7_script.R) |
+| 8 | Regressione con dati panel | [📄 Note](esercitazione8/esercitazione8.html) · [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione8/esercitazione8_script.R) |
+| 9 | Regressione con variabili strumentali | [📄 Note](esercitazione9/esercitazione9.html) · [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione9/esercitazione9_script.R) |
+| 10 | Regressione con variabili strumentali (parte 2) | [📄 Note](esercitazione10/esercitazione10.html) · [Script R](https://github.com/andrerecio/econometria-triennale/raw/main/esercitazione9/esercitazione10_script.R) |
+
+
+----
+
+## Homework
+
+
+| Domande | Soluzioni |
+|-------------|-----------|
+| 📄 [Homework 1](homework/homework_01.html)  | [Soluzioni](homework/homework_01_soluzioni.html) |
+
+
+
+---
+
+## Altro materiale
+
+| Simulazione | Argomenti | Link |
+|-------------|-----------|------|
+| Ottobre 2025 | Ripasso modelli log | [html](homework/homework01_log.html) |
+| Ottobre 2025 | LPM/Probit/Logit, IV, Panel, Interazioni, Time Series (9 CFU) | [html](homework/simulazione2_ottobre.html) |
+
+
+---
+
+Segnalazioni e errori: [issue](https://github.com/andrerecio/econometria-triennale/issues)

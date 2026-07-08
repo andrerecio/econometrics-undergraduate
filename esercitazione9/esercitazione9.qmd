@@ -1,0 +1,557 @@
+---
+title: "Esercitazione N.9"
+subtitle: "Regressione con variabili strumentali (IV)"
+author: "Andrea Recine"
+date: today
+lang: it
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenuti"
+    toc-location: right
+    number-sections: true
+
+    # Codice
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+
+    # Output
+    embed-resources: true
+
+    # Tipografia
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+# Regressione con variabili strumentali
+
+In questa Esercitazione vedremo le regressioni con variabili strumentali (IV) per risolvere il problema dell'endogeneità di una o più variabili esplanatorie.
+
+
+Tre importanti minacce alla validità interna sono:
+
+1. Distorsione da variabili omesse per una variabile correlata con $X$ ma inosservata (perciò non può essere inclusa nella regressione) e per cui vi sono variabili di controllo inadeguate;
+
+2. Distorsione da causalità simultanea ($X$ causa $Y$ , $Y$ causa $X$);
+
+3. Distorsione da errori nelle variabili ($X$ è misurata con errore)
+
+
+Tutti e tre i problemi comportano $𝐸(u_i | X_i) \neq 0$. La regressione con variabili strumentali può eliminare la distorsione usando una variabile strumentale (IV), $Z$.
+
+
+Quello che cerchiamo è una variabile esterna $Z$ che sposti $X$ attraverso un canale specifico e isolabile.
+
+
+
+
+Consideriamo il modello $Y_i = \beta_0 + \beta_1 X_i + u_i$
+
+- Il metodo delle variabili strumentali divide $X$ in due parti: una che potrebbe essere correlata con $u$, e una che non lo è.
+Isolando la parte che non è correlata con $u_i$, è possibile stimare $\beta_1$.
+
+
+- Per fare questo si utilizza una variabile strumentale, $Z_i$, che è correlata con $X_i$ ma non correlata con $u_i$
+
+
+Siamo quindi interessati a isolare a componente di $X$ generata da $Z$.
+
+
+Perché una variabile strumentale (uno “strumento”) $Z$ sia valida, deve soddisfare due condizioni:
+
+1. **Rilevanza:** $cor(Z_i, X_i) \neq 0$ Lo strumento deve muovere $X$
+2. **Esogeneità (restrizione di esclusione):** $cor(Z_i, u_i) = 0$ Lo strumento non deve influenzare $Y$ se non attraverso la variazione che genera in $X$. Cioè $Z$ deve influenzare $Y$ solo **indirettamente** attraverso $X$ e non deve essere correlato con i fattori non osservati che influenzano $Y$
+
+
+## Setup
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(modelsummary)
+library(fixest)
+library(wooldridge)
+```
+
+
+# Card (1995)
+
+Card (1995) ha utilizzato dati su salari e istruzione relativi ad un campione di uomini nel 1976 per stimare il rendimento dell’istruzione usando come strumento una variabile dummy che indica se un individuo è cresciuto vicino a un college quadriennale ($nearc4$) come strumento per l’istruzione.
+
+
+Card ha cercato di risolvere questo problema utilizzando la distanza di ciascuno studente dal college più vicino come variabile strumentale. L'ipotesi alla base di questo è che una minore distanza geografica dal college riduca il "costo" di frequentare l'università e quindi aumenti la probabilità di iscriversi. Allo stesso tempo, la distanza dal college non dovrebbe essere direttamente collegata alla variabile di interesse, ovvero "i salari futuri".
+
+
+
+Pertanto, se $nearc4$ è realmente incorrelato con i fattori non osservabili inclusi nel termine d’errore, può essere utilizzato come strumento per $educ$.
+
+
+```{r}
+data("card", package = "wooldridge")
+head(card)
+```
+
+
+- $wage$: sono le retribuzioni orarie **in centesimi** di dollari
+- $educ$: sono gli anni di istruzione
+- $exper$: anni di esperienza 
+- $smsa$: residenza in area metropolitana (dummy)
+- $black$: se la persona è nera (dummy)
+- $south$: se l'individuo risiede al sud
+- $nearc4$: dummy uguale ad 1 se l'individuo vive vicino a un college di 4 anni
+- $nearc2$: dummy uguale ad 1 se l'individuo vive vicino a un college di 2 anni
+  
+
+**Esercizio:**
+
+```{r}
+wage_educ <- feols(wage ~ educ + exper, data = card, vcov = "hetero")
+logwage_educ <- feols(log(wage) ~ educ + exper, data = card, vcov = "hetero")
+
+
+modelsummary(
+  list("Wage" = wage_educ, "Log Wage" = logwage_educ), gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+::: {.callout-note title="Domande"}
+1. Come si interpretano i coefficienti di $educ$ nelle due regressioni?
+2. Se $wage$ fosse espresso in dollari (e non centinaia di dollari) cosa cambierebbe nelle due regressioni? 
+:::
+
+
+
+## Minimi quadrati a due stadi (TSLS)
+
+```{r}
+iv_card <- feols(log(wage) ~ 1 | educ ~ nearc4, data = card, vcov = "hetero")
+iv_card
+```
+
+
+La regressione IV usando `feols` si stima con la sintassi `log(wage) ~ 1 | educ ~ nearc4`.
+
+L'idea del **two-stage least squares (TSLS)** è isolare in due passi la parte "pulita" di $X_i$, cioè la componente incorrelata con $u_i$.
+
+**Primo stadio.** Si regredisce il regressore endogeno sullo strumento con una semplice OLS,
+
+$$
+X_i = \pi_0 + \pi_1 Z_i + v_i
+$$
+
+e si calcolano i valori predetti $\hat{X}_i = \hat{\pi}_0 + \hat{\pi}_1 Z_i$. Questi sono, per costruzione, una funzione lineare del solo $Z_i$, e quindi **ereditano l'esogeneità dello strumento**. Tutta la parte di $X_i$ correlata con $u_i$ — il residuo $\hat{v}_i$ — è stata lasciata fuori.
+
+```{r}
+fs_card <- feols(educ ~ nearc4, data = card, vcov = "hetero")
+fs_card
+
+card$educ_hat <- predict(fs_card)
+```
+
+
+**Secondo stadio.** Si regredisce $Y_i$ non più su $X_i$, ma sulla sua versione depurata $\hat{X}_i$:
+
+$$
+Y_i = \beta_0 + \beta_1 \hat{X}_i + \varepsilon_i
+$$
+
+
+
+
+```{r}
+sstage_card <- feols(log(wage) ~ educ_hat, data = card, vcov = "hetero")
+sstage_card
+```
+
+::: {.callout-important}
+Con **un solo strumento e un solo regressore endogeno**, lo stimatore TSLS coincide esattamente con lo stimatore IV diretto (il rapporto di covarianze della sezione seguente): $\hat{\beta}_1^{TSLS} = \hat{\beta}_1^{IV}$. Il vantaggio della formulazione a due stadi è che si generalizza senza sforzo al caso di più strumenti, più regressori endogeni e più controlli, mentre il semplice rapporto di covarianze no.
+:::
+
+Facendo i due stadi "a mano", però, gli **errori standard sono sbagliati**: la seconda regressione tratta $\hat{X}_i$ come se fosse osservato, ignorando che è stato a sua volta stimato nel primo stadio. Per questo nella pratica si usa direttamente la sintassi IV di `feols`, che corregge gli errori standard. Come sempre usiamo errori standard robusti all'eteroschedasticità.
+
+
+## Derivazione algebrica diretta
+
+Visto che stiamo stimando una regressione con una sola variabile endogena e un solo strumento, possiamo derivare algebricamente la stima IV. Partiamo dall'equazione di interesse:
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + u_i
+$$
+
+Sappiamo che $X_i$ è endogena, cioè $\text{Cov}(X_i, u_i) \neq 0$, ed è per questo che l'OLS è distorto. La mossa decisiva è prendere la **covarianza di entrambi i membri con lo strumento** $Z_i$. La covarianza è un operatore lineare e la covarianza di una costante con qualunque variabile è nulla, quindi:
+
+$$
+\text{Cov}(Y_i, Z_i) = \beta_1 \, \text{Cov}(X_i, Z_i) + \text{Cov}(u_i, Z_i)
+$$
+
+L'ultimo termine è zero per la condizione di esogeneità dello strumento ($\text{Cov}(Z_i, u_i) = 0$). Resta un'unica equazione in un'unica incognita, che possiamo risolvere per $\beta_1$:
+
+$$
+\beta_1 = \frac{\text{Cov}(Y_i, Z_i)}{\text{Cov}(X_i, Z_i)}
+$$
+
+ $\beta_1$ diventa una semplice funzione di due covarianze osservabili non appena disponiamo di uno strumento valido. La condizione di **rilevanza** ($\text{Cov}(X_i, Z_i) \neq 0$) serve esattamente qui: garantisce che il denominatore non sia zero. Se lo strumento fosse irrilevante, avremmo una forma del tipo $0/0$ che non identifica nulla.
+
+Lo **stimatore IV** si ottiene sostituendo le covarianze di popolazione con le loro controparti campionarie ($s_{YZ}$ e $s_{XZ}$):
+
+$$
+\hat{\beta}_1^{IV} = \frac{s_{YZ}}{s_{XZ}}
+$$
+
+Nel nostro caso $Y = \log(wage)$ (la colonna `lwage`), $X = educ$ e $Z = nearc4$:
+
+```{r}
+cov(card$nearc4, card$lwage)/cov(card$nearc4, card$educ)
+```
+
+Il risultato coincide con la stima TSLS di $\beta_1$ del modello senza controlli (`iv_card`).
+
+
+
+## Derivazione dalla "forma ridotta"
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + u_i
+$$
+
+$$
+X_i = \pi_0 + \pi_1 Z_i + v_i
+$$
+
+Sostituendo l'equazione del primo stadio dentro l'equazione di interesse otteniamo:
+
+$$
+Y_i = \beta_0 + \beta_1(\pi_0 + \pi_1 Z_i + v_i) + u_i
+= \underbrace{(\beta_0 + \beta_1\pi_0)}_{\gamma_0} + \underbrace{\beta_1\pi_1}_{\gamma_1}\, Z_i + \underbrace{(\beta_1 v_i + u_i)}_{\omega_i}
+$$
+
+cioè una regressione del risultato sul solo strumento:
+
+$$
+Y_i = \gamma_0 + \gamma_1 Z_i + \omega_i
+$$
+
+Il coefficiente della forma ridotta è quindi $\gamma_1 = \beta_1 \pi_1$: il prodotto del coefficiente di interesse $\beta_1$ per il coefficiente del primo stadio $\pi_1$. Dividendo per $\pi_1$ si recupera $\beta_1$:
+
+$$
+\beta_1 = \frac{\gamma_1}{\pi_1}
+$$
+
+ed è esattamente ciò che fa lo stimatore $\hat{\beta}_1^{IV} = \hat{\gamma}_1 / \hat{\pi}_1$.
+
+La regressione dell'endogena sullo strumento l'abbiamo stimata in precedenza `fs_card`. Ora stimiamo la regressione della variabile dipendente sullo strumento.
+
+```{r}
+rf_card <- feols(log(wage) ~ nearc4, data = card, vcov = "hetero")
+rf_card
+```
+
+
+
+```{r}
+# Estrai i coefficienti
+beta_fs_1 <- coef(fs_card)["nearc4"]  # coefficiente del primo stadio
+beta_rf_1 <- coef(rf_card)["nearc4"]  # coefficiente della forma ridotta
+
+beta_rf_1 / beta_fs_1  
+
+```
+
+
+## Modello generale
+
+Finora abbiamo lavorato considerando un solo regressore endogeno ($X_i$) e un solo strumento ($Z_i$). Nella pratica vogliamo includere anche un blocco di **variabili esogene incluse** $W_{1i}, \dots, W_{ki}$ — *esogene* perché le assumiamo incorrelate con l'errore.
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + \delta_1 W_{1i} + \dots + \delta_k W_{ki} + u_i
+$$
+
+
+Ogni variabile esogena inclusa nell'equazione di interesse deve comparire anche nel primo stadio. Quindi, il primo stadio:
+
+
+$$
+X_i = \pi_0 + \pi_1 Z_i + \zeta_1 W_{1i} + \dots + \zeta_k W_{ki} + v_i
+$$
+
+e i valori predetti $\hat{X}_i$ diventano una funzione lineare delle sole variabili esogene ($Z_i$ e le $W$). Nel secondo stadio si regredisce $Y_i$ su $\hat{X}_i$ e sulle stesse $W$:
+
+$$
+Y_i = \beta_0 + \beta_1 \hat{X}_i + \delta_1 W_{1i} + \dots + \delta_k W_{ki} + \text{errore}
+$$
+
+Se dimenticassimo le $W$ al primo stadio, $\hat{X}_i$ erediterebbe la parte di variazione delle $W$ correlata con $u_i$, e lo stimatore tornerebbe a essere distorto.
+
+
+::: {.callout-important title="La restrizione di esclusione diventa condizionale"}
+Con i controlli, l'esogeneità dello strumento è **condizionata** alle $W$:
+
+$$
+E(u_i \mid W_i, Z_i) = E(u_i \mid W_i) = 0
+$$
+
+
+La prima uguaglianza, cioè l'esogeneità dello strumento, dice che, noto il valore delle $W$, conoscere in più $Z_i$ non aggiunge informazione sull'errore (lo strumento «non entra direttamente» nell'equazione di $Y$). La seconda dice che le $W$ stesse sono esogene.
+
+
+L'intuizione: $Z_i$ deve variare **come se fosse assegnato a caso** fra unità che condividono lo stesso valore delle $W$. Le $W$ servono proprio a creare questo «come se»: in molte applicazioni $Z_i$ non è credibilmente esogeno *tout court*, ma lo diventa una volta confrontate fra loro unità simili rispetto alle caratteristiche giuste. La scelta delle $W$ è parte integrante dell'argomento di identificazione come vedremo nell'esempio dei controlli geografici nel caso di Card.
+:::
+
+
+Nel modello di Card le $W$ sono $exper$, $expersq$, $black$, $smsa$, $south$. La sintassi `log(wage) ~ W1 + W2 + ... | educ ~ nearc4` di `feols` mette automaticamente le $W$ in entrambi gli stadi.
+
+```{r}
+iv_card_controlli <- feols(log(wage) ~ exper + expersq + black + smsa + south | educ ~ nearc4, data = card, vcov = "hetero")
+
+summary(iv_card_controlli)
+
+```
+
+
+**Confronto OLS:**
+
+```{r}
+ols_card_controlli <- feols(log(wage) ~ exper + expersq + black + smsa + south + educ, data = card, vcov = "hetero")
+
+modelsummary(
+  list("Log Wage (OLS)" = ols_card_controlli, "Log Wage (IV)" = iv_card_controlli), gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+
+```
+
+
+Nella regressione OLS, un anno aggiuntivo di istruzione è associato a un incremento, in media, di $wage$ di circa il 7,4%, a parità delle altre variabili.
+
+La regressione TSLS riporta un valore più alto: un anno aggiuntivo di istruzione è associato a un incremento, in media, di $wage$ di circa il 13,2%.
+
+
+### Perché servono i controlli geografici
+
+L'esogeneità dello strumento ($cor(Z_i, u_i) = 0$) è il punto delicato, ed è utile vedere in concreto come potrebbe rompersi. I college a quattro anni sono storicamente concentrati nelle aree metropolitane del Nord-Est e della costa pacifica, dove anche i salari sono mediamente più alti per ragioni che nulla hanno a che vedere con l'istruzione individuale: agglomerazione produttiva, costo della vita, composizione settoriale dell'economia locale.
+
+Immaginiamo di non includere alcun controllo geografico: la distanza dal college sarebbe automaticamente più piccola per i ragazzi cresciuti a Boston o a San Francisco, e contemporaneamente quei ragazzi guadagnerebbero da adulti più dei coetanei cresciuti nelle zone rurali del Sud, indipendentemente da quanto hanno studiato. Tutta la differenza salariale fra «vicino al college» e «lontano dal college» finirebbe in $u_i$ come premio salariale urbano, e si correlerebbe per costruzione con $nearc4$, rendendo $cor(Z_i, u_i) \neq 0$. La stima IV restituirebbe una combinazione di rendimento dell'istruzione e di premio urbano, e non saremmo in grado di distinguere i due.
+
+Per questo aggiungiamo un blocco di controlli che cattura proprio la geografia e il contesto socio-economico: residenza in area metropolitana (`smsa`) e le dummy per le regioni censuarie (`reg662`–`reg669`). Una volta condizionato su questo blocco, l'identificazione sfrutta soltanto la variazione di distanza fra aree con caratteristiche osservabili simili, dove la storia del «premio urbano confuso con il rendimento» non regge più.
+
+```{r}
+iv_card_geo <- feols(log(wage) ~ exper + expersq + black + smsa +
+                       reg662 + reg663 + reg664 + reg665 +
+                       reg666 + reg667 + reg668 + reg669
+                     | educ ~ nearc4, data = card, vcov = "hetero")
+
+modelsummary(
+  list("IV (base)" = iv_card_controlli, "IV (+ geografia)" = iv_card_geo), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+Il coefficiente di $educ$ resta sostanzialmente stabile (intorno al 14%) anche dopo aver incluso i controlli geografici: almeno tra le caratteristiche osservabili, il premio urbano non sembra distorcere gravemente la stima. Resta però il punto di fondo: questi controlli non sono un ornamento, ma il prezzo per poter difendere l'esogeneità dello strumento in modo credibile.
+
+
+## Sovraidentificazione
+
+Finora abbiamo considerato un solo strumento $Z_i$ per la stessa variabile endogena $X_i$. Avere a disposizione **più strumenti** non è una novità di identificazione — un solo strumento valido basta a identificare $\beta_1$ — ma può migliorare sostanzialmente la **precisione** della stima.
+
+Con $m$ strumenti $Z_{1i}, \dots, Z_{mi}$ e $k$ variabili esogene incluse $W_{1i}, \dots, W_{ki}$, il primo stadio del TSLS diventa
+
+$$
+X_i = \pi_0 + \pi_1 Z_{1i} + \dots + \pi_m Z_{mi} + \zeta_1 W_{1i} + \dots + \zeta_k W_{ki} + v_i
+$$
+
+e al secondo stadio si usano i valori previsti $\hat{X}_i$ esattamente come prima. 
+
+
+L'idea è la stessa: estrarre da $X_i$ la parte che si muove per ragioni esogene. Poiché la varianza dello stimatore TSLS è inversamente proporzionale a $\text{Var}(\hat{X}_i)$, più strumenti rilevanti significano automaticamente **meno varianza** della stima.
+
+Se un nuovo strumento è essenzialmente **ridondante** rispetto a quelli che abbiamo già allora il guadagno è piccolo. Se invece sposta $X_i$ per una ragione **diversa**, allora la parte esogena estratta cresce davvero, e il guadagno è sostanziale. Il caso ideale è quello di strumenti che catturano dimensioni diverse della variazione esogena di $X_i$.
+
+
+Nel dataset di Card sono disponibili due indicatori distinti di prossimità a un'istituzione di istruzione terziaria: $nearc4$ (college a quattro anni) e $nearc2$ (community college, due anni). 
+
+
+Sono strumenti separati perché agiscono attraverso canali diversi: il community college abbatte la barriera per i percorsi tecnico-professionali e per chi si ferma a un paio d'anni di formazione aggiuntiva; il college a quattro anni la abbatte per la laurea vera e propria. Entrambi spostano $educ$ ma in modo non identico — è proprio il caso «strumenti che dicono cose diverse» della nostra intuizione, e usarli insieme rende il modello **sovraidentificato** (due strumenti per un solo regressore endogeno).
+
+
+```{r}
+iv_card_overid <- feols(log(wage) ~ exper + expersq + black + smsa + south | educ ~ nearc4 + nearc2, data = card, vcov = "hetero")
+iv_card_overid
+```
+
+
+
+**Test restrizioni di sovraidentificazione (test $J$).** L'esogeneità degli strumenti non si può verificare direttamente, perché l'errore $u_i$ non si osserva. C'è però un caso in cui possiamo metterla **parzialmente** alla prova: quando il modello è sovraidentificato ($m > \ell$).
+
+
+
+L'intuizione è semplice. Con un solo strumento per un solo regressore endogeno esiste **una sola** stima IV di $\beta_1$: non ha senso chiederle di «essere coerente con se stessa». Con più strumenti, invece, ciascuno preso da solo produrrebbe la sua stima IV: se tutti sono validi dovrebbero coincidere a meno del rumore campionario, perché stimano lo stesso parametro. Se uno è endogeno, la sua stima si discosterà dalle altre.
+
+
+
+**Ipotesi:**
+
+- $H_0$: tutti gli strumenti sono esogeni, $cor(Z_{li}, u_i) = 0$ per $l = 1, \dots, m$.
+- $H_1$: almeno uno degli strumenti è endogeno.
+
+
+**Procedura** (Sargan, valida sotto omoschedasticità):
+
+1. Stimare il modello TSLS con tutti gli strumenti e ottenere i **residui del secondo stadio**
+$$
+\hat{u}_i = Y_i - \hat{\beta}_0 - \hat{\beta}_1 X_i - \hat{\delta}_1 W_{1i} - \dots - \hat{\delta}_k W_{ki}
+$$
+
+
+**Importante:** i residui si calcolano usando $X_i$ (osservato), non $\hat{X}_i$ del primo stadio. La funzione `resid()` di `fixest` lo fa correttamente.
+
+
+2. Stimare per OLS la regressione ausiliaria di $\hat{u}_i$ su **tutti** gli strumenti $Z_{1i}, \dots, Z_{mi}$ e su **tutte** le variabili esogene incluse $W_{1i}, \dots, W_{ki}$.
+
+
+
+3. Effettuare un test $F$ congiunto sui coefficienti dei soli strumenti: $H_0:\ \pi_1 = \dots = \pi_m = 0$.
+
+4. Calcolare $J = m \cdot F$.
+
+
+5. Sotto $H_0$, asintoticamente $J \sim \chi^2_{m-\ell}$, con gradi di libertà pari al **grado di sovraidentificazione** $m - \ell$ ($\ell$ = numero di regressori endogeni).
+
+::: {.callout-warning title="Attenzione ai gradi di libertà"}
+L'errore più diffuso nell'uso del test $J$ è leggere $J$ come una $\chi^2$ con $m$ gradi di libertà — tanti quanti i vincoli imposti nel passo 3. È **sbagliato**: i gradi di libertà corretti sono $m - \ell$, perché $\ell$ condizioni di momento sono già state «consumate» per stimare $\beta_1$ e i $\delta_j$. Nel caso esattamente identificato $m = \ell$ e non c'è nulla da testare: ogni stima IV è automaticamente coerente con se stessa.
+
+:::
+
+
+**Calcolo a mano** (nel caso Card: $m = 2$, $\ell = 1$, quindi sotto $H_0$ vale $J \sim \chi^2_1$):
+
+```{r}
+library(car)
+card <- card |> mutate(uhat = resid(iv_card_overid))
+
+Jreg_card <- feols(uhat ~ exper + expersq + black + smsa + south + nearc4 + nearc2,
+                   data = card, vcov = "iid")
+lh <- linearHypothesis(Jreg_card, c("nearc4 = 0", "nearc2 = 0"))
+lh
+```
+
+`linearHypothesis` riporta una $\chi^2$ con $m = 2$ gradi di libertà: il valore della statistica coincide con $J$ ma il $p$-valore è calcolato con i d.f. sbagliati. Lo correggiamo:
+
+```{r}
+pchisq(2.6461, df = 1, lower.tail = FALSE)
+```
+
+
+Quindi il valore critico a un livello del 5% con un grado di liberta ($q=1$) della $\chi^2$ è **3.84**: $J$ è sotto la soglia, e quindi **non** rifiutiamo l'ipotesi nulla di esogeneità di entrambi gli strumenti.
+
+
+**Verifica con `fitstat` di `fixest`** (procedura interna con i d.f. giusti):
+
+```{r}
+fitstat(iv_card_overid, type = c("sargan"))
+```
+
+I due approcci concordano: $J \approx 2.65$, $p \approx 0.10$.
+
+::: {.callout-important title="Asimmetria del test"}
+- Un **rifiuto** segnala che almeno uno degli strumenti è endogeno, **ma non dice quale**: la statistica è aggregata su tutti gli strumenti contemporaneamente.
+- Un **mancato rifiuto** non dimostra che gli strumenti siano validi: se tutti fossero endogeni *nello stesso modo*, producendo stime tutte distorte ma coerenti fra loro, il test non se ne accorgerebbe.
+
+Il test $J$ può essere una verifica utile ma **non è un sostituto dell'argomentazione economica** sull'esogeneità.
+:::
+
+
+## Strumenti deboli
+
+Lo stimatore IV nella sua forma più semplice è $\hat{\beta}_1^{IV} = s_{YZ}/s_{XZ}$. Al denominatore c'è la covarianza campionaria fra strumento e regressore endogeno. Se lo strumento è rilevante ma **debolmente rilevante** — $\text{Cov}(X_i, Z_i)$ diversa da zero ma piccola — quel denominatore è una quantità piccola, stimata con errore.
+
+
+Con strumenti deboli l'**approssimazione normale** dello stimatore TSLS non vale, nemmeno in campioni grandi; lo stimatore può essere distorto e la distorsione tende ad avvicinarlo all'OLS — proprio ciò che l'IV dovrebbe correggere. Intervalli di confidenza e test di ipotesi costruiti nel modo consueto sono **inaffidabili**.
+
+
+**Test di rilevanza.** Si stima il primo stadio (regressione di $X_i$ su tutti gli strumenti $Z_{1i}, \dots, Z_{mi}$ e su tutte le esogene incluse) e si verifica l'ipotesi nulla **congiunta** che i coefficienti dei soli strumenti siano tutti nulli:
+
+$$
+H_0:\ \pi_1 = \pi_2 = \dots = \pi_m = 0
+$$
+
+Si usa una statistica $F$. La regola empirica più diffusa, per il caso di un solo regressore endogeno, è semplice da ricordare: se $F > 10$ gli strumenti si considerano sufficientemente forti; se $F < 10$ c'è un serio rischio di strumenti deboli e la stima IV va trattata con grande cautela. 
+
+
+> **Nota: — la regola "F > 10"** [Montiel Olea & Pflueger (2013)](https://joseluismontielolea.com/Montiel-OleaJBES.pdf), hanno proposto un *effective F-statistic* robusto all'eteroschedasticità e all'autocorrelazione e nuove soglie critiche calibrate sul livello di distorsione "worst-case" che si è disposti a tollerare rispetto a OLS (es. 10%, 20%, 30%). Le soglie di Montiel Olea & Pflueger (2013) sono più alte di 10. Per il resto del corso continueremo a usare la regola classica (rule of thumb) di $F > 10$ come riferimento intuitivo. [Andrews (2019)](https://www.annualreviews.org/content/journals/10.1146/annurev-economics-080218-025643) fornisce una rassegna del problema degli strumenti deboli nella letteratura economica.
+
+
+
+**Importante:** In termini equivalenti di statistica di Wald (chi-quadro a $m$ gradi di libertà), la soglia corrisponde a $Wald > m \times 10$.
+
+
+**Un solo strumento ($nearc4$):**
+
+```{r}
+fs_card_ctrl <- feols(educ ~ nearc4 + exper + expersq + black + smsa + south, data = card, vcov = "hetero")
+
+linearHypothesis(fs_card_ctrl, "nearc4=0", test="F")
+```
+
+La statistica $F \approx 17.5$ è sopra la soglia di 10: $nearc4$ è sufficientemente rilevante per identificare $\beta_1$.
+
+
+
+
+In questo caso usando la $\chi^2$ al posto di $F$ la regola diventerebbe $Wald > m \times 10 = 1 \times 10 = 10$.
+
+```{r}
+linearHypothesis(fs_card_ctrl, "nearc4=0")
+```
+
+
+**Caso a due strumenti ($nearc4$ e $nearc2$):**
+
+```{r}
+fs_card_overid <- feols(educ ~ nearc4 + nearc2 + exper + expersq + black + smsa + south, data = card, vcov = "hetero")
+
+linearHypothesis(fs_card_overid, c("nearc4=0", "nearc2=0"), test="F")
+```
+
+
+Qui $F \approx 9.7$, **appena sotto la soglia di 10**. Aggiungendo $nearc2$ al modello, gli strumenti sono vicini alla soglia di 10: il guadagno di precisione discusso nella sezione di sovraidentificazione si paga col fatto che ciascuno strumento, da solo, contribuisce un po' meno alla varianza spiegata di $educ$.
+
+
+Verifica con `fitstat` di `fixest`:
+
+```{r}
+fitstat(iv_card_overid, type = c("ivwald"))
+```
+
+
+
+Se uso la distribuzione $\chi^2$, allora la regola diventa $Wald > m \times 10$ (con $m=2$ strumenti, la soglia è 20). In questo caso la statistica di Wald è 19.4, appena sotto la soglia di 20.
+
+
+```{r}
+linearHypothesis(fs_card_overid, c("nearc4=0", "nearc2=0"))
+```
+
+
+
+

@@ -1,0 +1,185 @@
+---
+title: "Homework 1"
+subtitle: "Current Population Survey (CPS) 2024"
+author: "Andrea Recine"
+date: today
+lang: it
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenuti"
+    toc-location: right       
+    number-sections: true
+    
+    # Codice
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+    
+    # Output
+    embed-resources: true
+    
+    # Tipografia
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+## Introduzione
+
+### Dati
+
+I dati utilizzati in questa esercitazione provengono dal **Current Population  Survey Annual Social and Economic Supplement (CPS-ASEC)** per l'anno 2024, estratti tramite IPUMS CPS [Flood et al., 2025]. Il campione utilizzato è una sottoselezione di 2000 osservazioni di lavoratori in età lavorativa (16-65 anni) con redditi da lavoro positivi.
+
+I microdati IPUMS sono soggetti a licenza d'uso e non vengono ridistribuiti. Studenti interessati a replicare le analisi possono registrarsi gratuitamente su <https://cps.ipums.org/> e scaricare un estratto analogo.
+
+**Citazione completa**:
+
+> Sarah Flood, Miriam King, Renae Rodgers, Steven Ruggles, J. Robert Warren, 
+> Daniel Backman, Etienne Breton, Grace Cooper, Julia A. Rivera Drew, 
+> Stephanie Richards, David Van Riper, and Kari C.W. Williams. *IPUMS CPS: 
+> Version 13.0* [dataset]. Minneapolis, MN: IPUMS, 2025. 
+> <https://doi.org/10.18128/D030.V13.0>
+
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(tinytable)
+library(modelsummary)
+library(fixest)
+```
+
+
+```{r}
+#| warning: false
+library(wooldridge)
+```
+
+```{r}
+data("wage1", package = "wooldridge")
+```
+
+
+
+
+
+## Esercizio 2
+
+Consideriamo i dati in `wage2`
+
+```{r}
+data("wage2", package = "wooldridge")
+```
+
+
+- $wage$ sono le retribuzioni mensili
+- $educ$ sono gli anni di istruzioni
+- $exper$ anni di esperienza
+
+Stimiamo le seguente regressioni:
+
+```{r}
+reg_wage1 <- feols(wage ~ educ + exper + tenure, data = wage2, vcov = "hetero")
+reg_logwage1 <- feols(log(wage) ~ educ + exper + tenure, data = wage2, vcov = "hetero")
+
+modelsummary(list("Wage" = reg_wage1, "Log Wage" = reg_logwage1), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+::: {.callout-note title="Domande"}
+1. Come si interpretano i coefficienti di $educ$ nelle due regressioni?
+2. I coefficienti sono statisticamente significativi al 5%? (Calcolare anche l'intervallo di confidenza al 95%)
+3. Wald test (statistica F robusta all'eteroschedasticità) che tutti i coefficienti della regressione siano uguali a zero
+:::
+
+
+
+
+
+### Istruzione dei genitori: dataset `wage2`
+
+Usiamo il dataset `wage2` considerando $pareduc$ che rappresenta la somma degli anni di istruzione dei genitori. $wage$ in `wage2` è il salario espresso in dollari mensili:
+
+```{r}
+wage2 <- wage2 %>%
+  mutate(pareduc = meduc + feduc)
+```
+
+```{r}
+regeduc_int <- feols(wage ~ educ*pareduc + exper + tenure, data = wage2, vcov = "hetero")
+regeduc_intlog <- feols(log(wage) ~ educ*pareduc + exper + tenure, data = wage2, vcov = "hetero")
+modelsummary(list("Wage " = regeduc_int, "Log Wage " = regeduc_intlog), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+
+
+## Deviazione dalla media
+
+
+
+```{r}
+wage2 <- wage2 %>%
+  mutate(
+    pareduc_center = pareduc - mean(pareduc, na.rm = TRUE),
+    educ_center = educ - mean(educ, na.rm = TRUE)
+  )
+
+```
+
+
+Confronto con la precedente regressione:
+
+```{r}
+regeduc_int <- feols(wage ~ educ*pareduc + exper + tenure, data = wage2, vcov = "hetero")
+regeduc_int_mean <- feols(wage ~ educ_center * pareduc_center + exper + tenure, data = wage2, vcov = "hetero")
+modelsummary(list("Wage " = regeduc_int, "Wage " = regeduc_int_mean), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+**Riferimenti**
+
+**Fonte dei dati**: I dati utilizzati provengono dal CPS ASEC 2024, 
+estratti tramite IPUMS CPS:
+
+Flood, S., King, M., Rodgers, R., Ruggles, S., Warren, J. R., Backman, D., 
+Breton, E., Cooper, G., Rivera Drew, J. A., Richards, S., Van Riper, D., 
+& Williams, K. C. W. (2025). *IPUMS CPS: Version 13.0* [dataset]. 
+IPUMS. <https://doi.org/10.18128/D030.V13.0>
+
+I microdati non vengono ridistribuiti ai sensi della licenza IPUMS. 
+Per replicare le analisi, registrarsi su <https://cps.ipums.org/>.
+
+

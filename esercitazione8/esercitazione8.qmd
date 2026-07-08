@@ -1,0 +1,548 @@
+---
+title: "Esercitazione N.8"
+subtitle: "Regressione con Dati Panel"
+author: "Andrea Recine"
+date: today
+lang: it
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenuti"
+    toc-location: right
+    number-sections: true
+
+    # Codice
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+
+    # Output
+    embed-resources: true
+
+    # Tipografia
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+
+# Regressione con dati panel
+
+Un panel contiene osservazioni su più unità (individui, stati, imprese) in cui ogni entità è osservata in due o più istanti temporali diversi:
+
+Per esempio:
+
+- Dati su 50 stati USA, ognuno è osservato per 3 anni, per un totale di 150 osservazioni.
+- Dati su 1000 individui, in quattro mesi diversi, per 4000 osservazioni in totale.
+
+Con i dati panel possiamo controllare per fattori che:
+
+- Variano tra le unità ma non nel tempo (ad esempio variabili inosservate che variano da stato a stato, ma che non cambiano nel tempo)
+- Variano nel tempo ma non tra le unità
+- Potrebbero causare distorsione da variabili omesse
+- Sono inosservati o non misurati, e perciò non possono essere inclusi in una regressione multipla
+
+
+**Idea chiave:** Se una variabile omessa non varia nel tempo, allora qualsiasi variazione in $Y$ nel tempo non può essere causata dalla variabile omessa.
+
+Questa è precisamente la logica degli **effetti fissi individuali**: assorbendo tutto ciò che è costante nel tempo per ciascuna unità, eliminano la distorsione dovuta a fattori *time-invariant* (osservati o no). Restano gli omessi che variano nel tempo. Ma se questi sono comuni a tutte le unità, possiamo controllare anche per quelli con **effetti fissi temporali**.
+
+## Setup
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(modelsummary)
+library(fixest)
+library(wooldridge)
+```
+
+
+# Dataset `wagepan`
+
+```{r}
+data("wagepan", package = "wooldridge")
+datasummary_skim(wagepan)
+```
+
+Il dataset `wagepan` contiene dati sui salari di 545 lavoratori dal 1980 al 1987 (T=8).
+
+In particolare usiamo:
+
+- $lwage$: logaritmo del salario log(wage)
+- $union$: variabile dummy uguale ad 1 se il lavoratore è sindacalizzato
+- $exper$: anni di esperienza
+- $expersq$: anni di esperienza al quadrato
+- $educ$: anni di istruzione
+- $black$: dummy uguale a 1 se il lavoratore è nero
+- $hisp$: dummy uguale a 1 se il lavoratore è ispanico
+- $married$: dummy uguale a 1 se il lavoratore è sposato
+
+
+```{r}
+head(wagepan)
+```
+
+
+## Pooled OLS
+
+Come punto di partenza, stimiamo un modello che ignora la struttura panel.
+
+```{r}
+reg_pooled <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married,
+                    data = wagepan, vcov = "hetero")
+reg_pooled
+```
+
+
+::: {.callout-note title="Domande"}
+1. Come si interpretano i coefficienti di $educ$ e $union$ nella regressione?
+:::
+
+- Essere sindacalizzato è **associato** a un salario medio più alto del 18% circa, a parità delle altre variabili.
+
+- Ogni anno aggiuntivo di istruzione è **associato** a un salario medio più alto di circa 9.9%, a parità delle altre variabili.
+
+
+
+# T=2: Effetti fissi individuali
+
+Iniziamo dal caso più semplice: due soli periodi di osservazione (1980 e 1987). Costruiamo un sottocampione con queste due annate.
+
+```{r}
+wagepan_2periods <- wagepan %>% filter(year %in% c(1980, 1987))
+head(wagepan_2periods)
+```
+
+Vogliamo stimare l'effetto di $union$ su $lwage$ (log(wage)) controllando per **effetti fissi individuali**, cioè caratteristiche del lavoratore che non variano nel tempo. Con T=2 esistono **tre modi equivalenti**:
+
+1. First difference (senza intercetta)
+2. Within transformation (deviazione dalla media individuale)
+3. Dummy individuali
+
+
+`library(fixest)` con il comando `feols(... | nr, ...)` implementa la trasformazione within in modo efficiente e correggendo gli errori standard [(Bergé et al. 2026)](https://arxiv.org/pdf/2601.21749)
+
+
+## First difference (senza intercetta)
+
+Calcoliamo le differenze prime $\Delta y_i = y_{i,1987} - y_{i,1980}$ raggruppando per individuo (`group_by(nr)`) e ordinando per anno.
+
+```{r}
+wagepan_2periods_fd <- wagepan_2periods %>%
+  arrange(nr, year) %>%
+  group_by(nr) %>%
+  mutate(
+    d_lwage   = lwage   - lag(lwage),
+    d_union   = union   - lag(union),
+    d_exper   = exper   - lag(exper),
+    d_expersq = expersq - lag(expersq),
+    d_educ    = educ    - lag(educ),
+    d_black   = black   - lag(black),
+    d_hisp    = hisp    - lag(hisp),
+    d_married = married - lag(married)
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(d_lwage))   # rimuove la riga 1980 di ogni individuo
+```
+
+Stimiamo la regressione **senza intercetta** (con `-1`):
+
+```{r}
+reg_fd <- feols(d_lwage ~ -1 + d_union + d_exper + d_expersq + d_educ + d_black + d_hisp + d_married,
+                data = wagepan_2periods_fd, vcov = "hetero")
+reg_fd
+```
+
+Le variabili $educ$, $black$, $hisp$ sono costanti nel tempo per ogni individuo: la loro differenza prima è zero e vengono rimosse per collinearità. Questo è esattamente il senso degli effetti fissi individuali: assorbono tutto ciò che non varia nel tempo.
+
+
+## Within (deviazione dalla media individuale)
+
+In alternativa, sottraiamo la media individuale a ciascuna variabile (`group_by(nr)`):
+
+```{r}
+wagepan_2periods_dm <- wagepan_2periods %>%
+  group_by(nr) %>%
+  mutate(
+    lwage_dm   = lwage   - mean(lwage,   na.rm = TRUE),
+    union_dm   = union   - mean(union,   na.rm = TRUE),
+    exper_dm   = exper   - mean(exper,   na.rm = TRUE),
+    expersq_dm = expersq - mean(expersq, na.rm = TRUE),
+    educ_dm    = educ    - mean(educ,    na.rm = TRUE),
+    black_dm   = black   - mean(black,   na.rm = TRUE),
+    hisp_dm    = hisp    - mean(hisp,    na.rm = TRUE),
+    married_dm = married - mean(married, na.rm = TRUE)
+  ) %>%
+  ungroup()
+```
+
+```{r}
+reg_within <- feols(lwage_dm ~ union_dm + exper_dm + expersq_dm + educ_dm + black_dm + hisp_dm + married_dm,
+                    data = wagepan_2periods_dm, vcov = "hetero")
+reg_within
+```
+
+L'intercetta è zero perché le variabili centrate hanno media nulla. Potremmo per completezza aggiungere `-1` nel comando di `feols`.
+
+
+## Dummy individuali
+
+Possiamo anche includere esplicitamente una dummy per ciascun individuo con `as.factor(nr)`.
+
+```{r}
+reg_lsdv <- feols(lwage ~ as.factor(nr) + union + exper + expersq + educ + black + hisp + married,
+                  data = wagepan_2periods, vcov = "hetero")
+reg_lsdv
+```
+
+
+
+`feols` stima così **una dummy per ciascun individuo** (545 individui: l'intercetta più 544 dummy). Le variabili costanti nel tempo $educ$, $black$, $hisp$ vengono rimosse per collinearità.
+
+
+L'output completo conterrebbe centinaia di righe: mostriamo solo le variabili di interesse con `keep`.
+
+```{r}
+etable(reg_lsdv, keep = c("union", "exper", "expersq"), order = c("union", "exper", "expersq"), signif.code = NA)
+```
+
+
+
+Il coefficiente di $union$ è identico a quello ottenuto con first difference e within transformation.
+
+
+
+
+## `feols(... | nr, ...)`
+
+Il pacchetto `fixest` con la sintassi `| nr` dove `nr` indica la dimensione degli effetti fissi:
+
+```{r}
+reg_fe_ind <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr,
+                    data = wagepan_2periods, vcov = "hetero")
+reg_fe_ind
+```
+
+
+::: {.callout-important title="Equivalenza con T=2"}
+Con T=2 i tre approcci sono **algebricamente equivalenti**: producono lo stesso coefficiente di $union$ (≈ 0.077). La trasformazione within fatta manualmente richiederebbe un aggiustamento degli errori standard, mentre `feols(... | nr, ...)` lo fa automaticamente. Con T>2 la trasformazione within e le dummy continuano a coincidere, ma la first difference no. 
+:::
+
+
+
+# T=2: Effetti fissi individuali + temporali
+
+Sempre nel sottocampione con T=2, aggiungiamo ora anche gli effetti fissi temporali. Controlliamo quindi congiuntamente per:
+
+- caratteristiche individuali che non variano nel tempo (effetti fissi individuali);
+- variazioni comuni a tutti gli individui che variano nel tempo (effetti fissi temporali).
+
+
+## First difference con intercetta
+
+Stock & Watson (p. 283) mostrano che, quando T=2, includere un'**intercetta** nella regressione in differenze prime equivale a includere effetti fissi individuali **e** temporali. L'intercetta cattura la variazione media comune tra il 1980 e il 1987.
+
+```{r}
+reg_fd_int <- feols(d_lwage ~ d_union + d_exper + d_expersq + d_educ + d_black + d_hisp + d_married,
+                    data = wagepan_2periods_fd, vcov = "hetero")
+reg_fd_int
+```
+
+
+`d_exper` viene rimossa per collinearità: tra 1980 e 1987 ogni individuo ha guadagnato esattamente 7 anni di esperienza, quindi $\Delta exper$ è una costante perfettamente collineare con l'intercetta.
+
+
+## `feols(... | nr + year, ...)`
+
+```{r}
+reg_fe_indtime <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr + year,
+                        data = wagepan_2periods, vcov = "hetero")
+reg_fe_indtime
+```
+
+
+
+Vedremo nel prossimo capitolo che con T>2 questa coincidenza scompare.
+
+
+
+# T>2: Panel completo
+
+Torniamo ora al panel completo (T=8, 545 individui, 4360 osservazioni). 
+
+
+## Within (deviazione dalla media individuale)
+
+```{r}
+wagepan_dm <- wagepan %>%
+  group_by(nr) %>%
+  mutate(
+    lwage_dm   = lwage   - mean(lwage,   na.rm = TRUE),
+    union_dm   = union   - mean(union,   na.rm = TRUE),
+    exper_dm   = exper   - mean(exper,   na.rm = TRUE),
+    expersq_dm = expersq - mean(expersq, na.rm = TRUE),
+    educ_dm    = educ    - mean(educ,    na.rm = TRUE),
+    black_dm   = black   - mean(black,   na.rm = TRUE),
+    hisp_dm    = hisp    - mean(hisp,    na.rm = TRUE),
+    married_dm = married - mean(married, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+reg_within_full <- feols(lwage_dm ~ -1 + union_dm + exper_dm + expersq_dm + educ_dm + black_dm + hisp_dm + married_dm,
+                         data = wagepan_dm, vcov = "hetero")
+reg_within_full
+```
+
+
+## `feols(... | nr, ...)`
+
+```{r}
+reg_fe_ind_full <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr,
+                         data = wagepan, vcov = "hetero")
+reg_fe_ind_full
+```
+
+Le variabili $educ$, $black$, $hisp$ sono costanti a livello individuale e quindi collineari con gli effetti fissi: vengono rimosse.
+
+
+## First difference sul panel completo
+
+
+
+```{r}
+wagepan_fd <- wagepan %>%
+  arrange(nr, year) %>%
+  group_by(nr) %>%
+  mutate(
+    d_lwage   = lwage   - lag(lwage),
+    d_union   = union   - lag(union),
+    d_exper   = exper   - lag(exper),
+    d_expersq = expersq - lag(expersq),
+    d_educ    = educ    - lag(educ),
+    d_black   = black   - lag(black),
+    d_hisp    = hisp    - lag(hisp),
+    d_married = married - lag(married)
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(d_lwage))
+
+reg_fd_full <- feols(d_lwage ~ -1 + d_union + d_exper + d_expersq + d_educ + d_black + d_hisp + d_married,
+                     data = wagepan_fd, vcov = "hetero")
+reg_fd_full
+```
+
+
+
+::: {.callout-important title="Con T>2 la first difference si sgancia"}
+
+La **first difference** dà un coefficiente diverso (≈ 0.043): entrambi gli stimatori restano consistenti sotto le ipotesi standard, ma usano l'informazione del panel in modo diverso.
+:::
+
+
+## Effetti fissi individuali e temporali
+
+```{r}
+reg_fe_indtime_full <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr + year,
+                             data = wagepan, vcov = "hetero")
+reg_fe_indtime_full
+```
+
+
+
+Come vedete, 4 variabili vengono rimosse ($exper$, $educ$, $black$, $hisp$): $exper$ è collineare con gli effetti fissi temporali (cresce di 1 ogni anno per ciascun individuo), le altre tre sono collineari con gli effetti fissi individuali.
+
+
+**Confronto finale su wagepan:**
+
+```{r}
+modelsummary(
+  list("Pooled OLS"   = reg_pooled,
+       "FE | nr"      = reg_fe_ind_full,
+       "FE | nr+year" = reg_fe_indtime_full),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+Il coefficiente di $union$ scende da 0.18 (cioè 18%) a 0.08 (circa 8% con effetti fissi individuali + temporali): metà dell'associazione iniziale era riconducibile a caratteristiche individuali e a shock temporali correlati con la sindacalizzazione.
+
+
+
+# Errori standard clustered
+
+Finora abbiamo usato errori standard robusti all'eteroschedasticità (Eicker-Huber-White). Con i dati sezionali sono adeguati: ogni osservazione è un'unità indipendente, e l'unico problema da correggere è che la varianza degli errori non sia costante. Questi errori standard **lasciano variare** la varianza $\text{Var}(u_i)$ da osservazione a osservazione, ma **assumono** che gli errori di osservazioni diverse siano incorrelati, $\text{Cov}(u_i, u_j) = 0$ per $i \neq j$.
+
+
+In un panel lo stesso individuo è osservato più volte, e i suoi errori nel tempo sono quasi sempre **correlati**: caratteristiche non osservate e shock persistenti (abilità, motivazione, condizioni locali). È la **correlazione seriale entro l'individuo**.
+
+Gli errori standard *clustered* sono costruiti proprio per questo: consentono correlazione **arbitraria entro un cluster** — qui l'individuo (`nr`) — sia essa eteroschedasticità e/o correlazione seriale, ma assumono indipendenza **tra** cluster diversi. Sono quindi validi indipendentemente dalla presenza di eteroschedasticità e/o correlazione seriale entro l'individuo.
+
+
+Se usassimo solo `vcov = "hetero"`, gli errori standard vengono **sottostimati**, le statistiche $t$ risultano troppo grandi e si tende a rifiutare l'ipotesi nulla troppo spesso (falsa significatività). In sostanza, la correlazione seriale degli errori all'interno di ciascun individuo rende inaffidabili gli errori standard robusti. Gli errori clustered correggono questa distorsione.
+
+
+
+```{r}
+reg_fe_cluster <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr + year,
+                        data = wagepan, vcov = "cluster")
+modelsummary(
+  list("FE (hetero)"      = reg_fe_indtime_full,
+       "FE (cluster, nr)" = reg_fe_cluster),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+Se selezioniamo `vcov = "cluster"`, `feols` usa automaticamente la prima dimensione degli effetti fissi per identificare i cluster: qui `nr` (individui). Altrimenti possiamo usare `vcov = ~nr`.
+
+
+# Crimine e disoccupazione
+
+Carichiamo il dataset `crime2` con osservazioni su 46 città USA, ognuna osservata nel 1982 e nel 1987 (T=2, $n \times T = 92$ osservazioni):
+
+- $crmrte$: tasso di crimine ogni 1.000 abitanti
+- $unem$: tasso di disoccupazione
+
+
+```{r}
+data("crime2", package = "wooldridge")
+head(crime2)
+```
+
+`crime2` non contiene una colonna esplicita con l'identificativo della città: le righe sono ordinate in modo che ogni coppia consecutiva di osservazioni si riferisca alla stessa città (riga 1 = città 1, anno 1982; riga 2 = città 1, anno 1987; e così via). Creiamo a mano la variabile `city`:
+
+```{r}
+crime2 <- crime2 %>%
+  mutate(city = rep(1:(nrow(crime2)/2), each = 2))
+```
+
+`ccrmrte` e `cunem` contengono già le differenze prime $1987 - 1982$ per ciascuna città (sono `NA` sulla riga 1982 e contengono il valore sulla riga 1987).
+
+
+## Pooled OLS
+
+```{r}
+regc_pooled <- feols(crmrte ~ unem, data = crime2, vcov = "hetero")
+regc_pooled
+```
+
+Un aumento di un punto percentuale del tasso di disoccupazione è **associato**, in media, a una riduzione di circa 0.31 crimini per 1.000 abitanti. Risultato controintuitivo: la relazione tra disoccupazione e crimine è confusa da caratteristiche delle città (densità, demografia, ricchezza) e da differenze tra i due anni.
+
+
+## Effetti fissi temporali
+
+Possiamo controllare per shock comuni alle città in ogni anno (effetti fissi temporali) in tre modi equivalenti.
+
+**Dummy esplicita `d87`:**
+
+```{r}
+regc_d87 <- feols(crmrte ~ unem + d87, data = crime2, vcov = "hetero")
+regc_d87
+```
+
+**`feols(... | year, ...)`:**
+
+```{r}
+regc_fe_year <- feols(crmrte ~ unem | year, data = crime2, vcov = "hetero")
+regc_fe_year
+```
+
+**Within per anno** (sottraiamo a ciascuna città la media calcolata sulle città osservate nello stesso anno):
+
+```{r}
+crime2_dm_year <- crime2 %>%
+  group_by(year) %>%
+  mutate(crmrte_dm = crmrte - mean(crmrte),
+         unem_dm   = unem   - mean(unem)) %>%
+  ungroup()
+
+regc_within_year <- feols(crmrte_dm ~ -1 + unem_dm, data = crime2_dm_year, vcov = "hetero")
+regc_within_year
+```
+
+
+```{r}
+modelsummary(
+  list("Dummy d87"    = regc_d87,
+       "|year"        = regc_fe_year,
+       "Within anno"  = regc_within_year),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+
+Una volta tolto l'effetto comune dell'anno, l'associazione tra disoccupazione e crimine cambia segno: $unem$ è ora associato a un aumento di circa 0.43 crimini per 1.000 abitanti.
+
+
+## Effetti fissi per città
+
+
+
+**First difference (senza intercetta)** — usa direttamente `ccrmrte` e `cunem` già nel dataset:
+
+```{r}
+regc_fd <- feols(ccrmrte ~ -1 + cunem, data = crime2, vcov = "hetero")
+regc_fd
+```
+
+**`feols(... | city, ...)`:**
+
+```{r}
+regc_fe_city <- feols(crmrte ~ unem | city, data = crime2, vcov = "hetero")
+regc_fe_city
+```
+
+```{r}
+modelsummary(
+  list("FD (no intercetta)" = regc_fd,
+       "|city"              = regc_fe_city),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+
+
+## Effetti fissi individuali + temporali
+
+Applichiamo il risultato di Stock & Watson (p. 283): con T=2, la **first difference con intercetta** è equivalente a includere FE individuali e temporali.
+
+```{r}
+regc_fd_int <- feols(ccrmrte ~ cunem, data = crime2, vcov = "hetero")
+regc_fd_int
+
+regc_fe_full <- feols(crmrte ~ unem | city + year, data = crime2, vcov = "hetero")
+regc_fe_full
+```
+
+```{r}
+modelsummary(
+  list("FD con intercetta"  = regc_fd_int,
+       "|city + year"       = regc_fe_full),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+Controllando sia per gli effetti fissi per unità sia per quelli temporali, un punto percentuale in più di disoccupazione è associato a un aumento di circa 2.2 crimini per 1.000 abitanti.
+
+
