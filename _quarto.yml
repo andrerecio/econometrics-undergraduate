@@ -54,6 +54,9 @@ website:
           - text: "Log Models Review"
             href: problem-sets/log_models_review.qmd
 
+execute:
+  freeze: auto
+
 format:
   html:
     theme: flatly
