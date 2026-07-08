@@ -1,0 +1,413 @@
+---
+title: "Tutorial 3"
+subtitle: "Nonlinearity: logarithms"
+author: "Andrea Recine"
+date: today
+lang: en
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    toc-location: right
+    number-sections: true
+
+    # Code
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+
+    # Output
+    embed-resources: true
+
+    # Typography
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+
+## Setup
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(tinytable)
+library(modelsummary)
+library(fixest)
+library(wooldridge)
+```
+
+```{r}
+data("wage1", package = "wooldridge")
+```
+
+## Introduction
+
+Logarithmic transformations allow us to model relationships in percentage terms rather than in linear terms. For example, we may be interested in modeling the effect of an additional year of education on wages in percentage terms: each year of education increases wages by a certain percentage.
+
+Consideriamo:
+
+$$
+\log(wage_i) = \beta_0 + \beta_1 \, educ_i + u_i
+$$
+
+We estimate:
+
+```{r}
+reg_logwage <- feols(log(wage) ~ educ, data = wage1, vcov = "hetero")
+```
+
+Prendendo l'esponenziale si scrive:
+$$
+wage_i = \exp(\beta_0 + \beta_1 \, educ_i + u_i)
+$$
+
+**Note:** To graph the predicted values, we assume $u_i = 0$, that is, we show $\exp(\hat{\beta}_0 + \hat{\beta}_1 educ)$. How to correctly compute predictions of $Y$ when the model is in $\log(Y)$ is discussed in Section 8.2 of Stock and Watson (pp. 215-216).
+
+```{r}
+# Predicted values from the log-linear model
+wage1 <- wage1 %>%
+  mutate(
+    logwage_pred = predict(reg_logwage),    # predicted values in logs
+    wage_pred = exp(logwage_pred)           # predicted wage in the original scale
+  )
+
+# Plot with log-linear curve + OLS line
+ggplot(wage1, aes(x = educ)) +
+  geom_line(aes(y = wage_pred), color = "#ff7f0e", linewidth = 1.5) +          # log-linear curve
+  geom_smooth(aes(y = wage), method = "lm", se = FALSE, color = "#1f77b4", linewidth = 1.5) + # OLS line
+  labs(
+    title = "Comparison: Linear vs Log-Linear Regression",
+    x = "Years of education",
+    y = "Predicted hourly wage in dollars"
+  ) +
+  theme_minimal()
+```
+
+Because in the log-linear specification the percentage change in $wage$ is the same for each additional year of education, the dollar change in $wage$ for an additional year of education **increases** as $educ$ increases: the log-linear model therefore implies increasing returns to education, as shown by the curvature of the orange line relative to the OLS line (in blue).
+
+## Log-Lin Versus Levels
+
+We also estimate the regression in levels to compare it with the log-linear specification:
+
+```{r}
+reg_wage <- feols(wage ~ educ, data = wage1, vcov = "hetero")
+```
+
+```{r}
+modelsummary(
+  list("Level" = reg_wage, "Log-lin" = reg_logwage),
+  title = "Dependent variable: wage or log(wage)",
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+
+The coefficient $\beta_1$ in the log-linear specification has a percentage interpretation once multiplied by 100: on average, an additional year of education is associated with an 8.3% increase in hourly wage ($wage$).
+
+**Important:** $R^2$ shows that $educ$ explains about 18.6% of the variation in $\log(wage)$ (not in $wage$). $R^2$ cannot be used to compare these two regressions because they have different dependent variables ($wage$ and $\log(wage)$; see Stock and Watson, p. 215).
+
+::: {.callout-warning title="R² and Model Comparison"}
+The $R^2$ is comparable **only across models with the same dependent variable $Y$**. The reason follows from its components:
+
+$$R^2 =  \frac{ESS}{TSS}$$
+
+where:
+
+$$TSS = \sum_i (Y_i - \bar{Y})^2$$
+
+where $TSS$ depends **only** on $Y$ and is the total variation in $Y$. By contrast, $ESS$ is the variation explained by the regression:
+
+$$ESS = \sum_i (\hat{Y_i} - \bar{Y})^2$$
+
+and depends on the model estimates.
+
+
+Recall, however, that changing the unit of measurement of either the dependent variable or the independent variable does not change the model's goodness of fit to the data. The $R^2$ remains unchanged.
+
+:::
+
+
+Logarithms can be used to transform the dependent variable $Y$, an independent variable $X$, or both (the variables must be positive).
+
+
+
+
+::: {.callout-note title="Log Specifications"}
+
+| Model form       | Interpretation                                                                 |
+|-------------------------|----------------------------------------------------------------------------------|
+| $\log(Y)$ ~ $X$         | A one-unit increase in $X$ is associated with a change of $100 \cdot \beta_1$\% in $Y$              |
+| $Y$ ~ $\log(X)$         | A 1\% increase in $X$ is associated with a change of $0.01 \cdot \beta_1$ in $Y$       |
+| $\log(Y)$ ~ $\log(X)$   | A 1\% increase in $X$ is associated with a $\beta_1$\% change in $Y$                    |
+
+:::
+
+
+### Interpretation of the Coefficients: Log-Lin, Log-Log, and Lin-Log:
+
+
+```{r}
+reg_logwagelog <- feols(log(wage) ~ log(educ), data = wage1, vcov = "hetero")
+reg_wagelog <- feols(wage ~ log(educ), data = wage1, vcov = "hetero")
+modelsummary(
+  list("Log-lin" = reg_logwage, "Log-log" = reg_logwagelog, "Lin-log" = reg_wagelog),
+  title = "Dependent Variable: log(wage) or wage",
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+
+- **First model** (log-lin): an additional year of education is associated, on average, with an 8.3% increase in hourly wage.
+
+
+- **Second model** (log-log): a 1% increase in years of education is associated, on average, with a 0.825% increase in hourly wage. The coefficient is therefore an elasticity: it measures the percentage change in $Y$ associated with a **one** percent change in $X$.
+
+- **Third model** (lin-log): a 1% increase in years of education is associated, on average, with a 0.053 dollar increase in hourly wage. A 10% increase in years of education is associated, on average, with a 0.53 dollar increase in hourly wage (10 $\cdot$ 0.053).
+
+
+::: {.callout-tip title="When Should Logs Be Used?"}
+The choice of functional form should be guided by reasoning: which interpretation makes more sense?
+
+Logs are typically used for monetary variables (such as $wage$ or income) or level variables (such as population), especially when they exhibit substantial variation. They are less appropriate for variables measured in years (such as $educ$ or age) or variables already expressed in percentages (such as the unemployment rate).
+:::
+
+
+
+
+::: {.callout-important title="Unit of Measurement of the Dependent Variable"}
+
+When variables are expressed in logs, changing the unit of measurement of the dependent variable is irrelevant. Try expressing wage in hundreds of dollars by creating $wage/100$ and regressing it on $educ$. The same holds when both $X$ and $Y$ are in logs.
+
+
+**The intercept, however, will change**. If $Y$ is in logs, the intercept represents the log of hourly wage ($\log(wage)$) when $educ$ is zero. If $Y$ is in hundreds of dollars, the intercept represents hourly wage ($wage$) when $educ$ is zero.
+:::
+
+## Changing Units of Measurement and Log Specifications
+
+In this section, we compare the coefficients and intercepts of regressions in which $wage$ and $educ$ are expressed in different units of measurement relative to the reference table, which reports the original estimates of the three models (`reg_logwage`, `reg_logwagelog`, `reg_wagelog`) from the previous section.
+
+### Dependent Variable:
+
+
+We express $wage$ in tens of dollars and estimate the regression of $\log(wage/10)$ on $educ$ and $\log(educ)$, and of $wage/10$ on $\log(educ)$. In models with $Y$ in logs, the coefficient on the independent variable does not change, while the intercept always changes; in the lin-log model, both the coefficient and the intercept change.
+
+```{r}
+reg_logwage_dec <- feols(log(wage/10) ~ educ, data = wage1, vcov = "hetero")
+reg_logwagelog_dec <- feols(log(wage/10) ~ log(educ), data = wage1, vcov = "hetero")
+reg_wagelog_dec <- feols(wage/10 ~ log(educ), data = wage1, vcov = "hetero")
+
+modelsummary(
+  list("Log-lin" = reg_logwage_dec, "Log-log" = reg_logwagelog_dec, "Lin-log" = reg_wagelog_dec),
+  title = "Dependent Variable: log(wage/10) or wage/10",
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+#### **First model (log-lin)** {.unnumbered}
+
+An additional year of education is associated, on average, with an 8.3% increase in hourly wage: the coefficient on $educ$ does not change.
+
+The intercept, however, changes. Indeed:
+
+$$\log(wage/10) = \log(wage) - \log(10)$$
+
+therefore the model becomes:
+
+$$\log(wage) = \beta_0 + \log(10) + \beta_1 \, educ + u$$
+
+The term $\log(10)$ is absorbed by the intercept. The new intercept is therefore:
+
+$$\beta_0' = \beta_0 - \log(10) \approx 0.584 - 2.303 \approx -1.719$$
+
+which matches the value in the table.
+
+#### **Second model (log-log)** {.unnumbered}
+
+A 1% increase in years of education is associated, on average, with a 0.825% increase in hourly wage: here too, the coefficient on $\log(educ)$ does not change.
+
+For the same reason as in the log-lin model, the new intercept decreases by $\log(10)$:
+
+$$\beta_0' = \beta_0 - \log(10) = -0.445 - 2.303 \approx -2.748$$
+
+which matches the value in the table.
+
+#### **Third model (lin-log)** {.unnumbered}
+
+Here $Y$ is not in logs, so dividing both sides by 10 gives:
+
+$$\frac{wage}{10} = \frac{\beta_0}{10} + \frac{\beta_1}{10} \log(educ) + \frac{u}{10}$$
+
+Both the intercept and the coefficient change, and both are divided by 10:
+
+$$\beta_0' = \frac{\beta_0}{10} = \frac{-7.460}{10} \approx -0.746$$
+$$\beta_1' = \frac{\beta_1}{10} = \frac{5.330}{10} \approx 0.533$$
+
+which match the values in the table. The interpretation becomes: a 1% increase in years of education is associated, on average, with a 0.0053 increase in hourly wage measured in tens of dollars ($\beta_1'/100$).
+
+
+### Independent Variable:
+
+We express $educ$ in months of education rather than years (multiplying $educ$ by 12).
+
+```{r}
+wage1 <- wage1 %>%
+  mutate(educ_monthly = educ * 12)
+
+reg_logwage_monthly <- feols(log(wage) ~ educ_monthly, data = wage1, vcov = "hetero")
+reg_logwagelog_monthly <- feols(log(wage) ~ log(educ_monthly), data = wage1, vcov = "hetero")
+reg_wagelog_monthly <- feols(wage ~ log(educ_monthly), data = wage1, vcov = "hetero")
+
+modelsummary(
+  list("Log-lin" = reg_logwage_monthly, "Log-log" = reg_logwagelog_monthly, "Lin-log" = reg_wagelog_monthly),
+  title = "Dependent Variable: log(wage) or wage",
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+
+#### **First model (log-lin)** {.unnumbered}
+
+An additional month of education is associated, on average, with a 0.7% increase in hourly wage (0.007 equals 0.083/12).
+
+The intercept remains unchanged because it represents log hourly wage when $educ = 0$ (zero months of education is the same as zero years of education).
+
+
+#### **Second model (log-log)** {.unnumbered}
+
+A 1% increase in months of education is associated, on average, with a 0.825% increase in hourly wage.
+
+The intercept, however, changes. Indeed:
+
+$$\log(educ \times 12) = \log(educ) + \log(12)$$
+
+therefore the model becomes:
+
+$$\log(wage) = \beta_0 + \beta_1 \log(educ) + \beta_1 \log(12) + u$$
+
+The term $\beta_1 \log(12)$ is a constant that is absorbed by the intercept. The new intercept is therefore:
+
+$$\beta_0' = \beta_0 - \beta_1 \log(12) = -0.445 - 0.825 \times 2.485
+\approx -2.495$$
+
+which matches the value in the table.
+
+#### **Third model (lin-log)** {.unnumbered}
+
+A 1% increase in months of education is associated, on average, with a 0.053 dollar increase in hourly wage.
+
+For the same reason as in the log-log model, the intercept decreases by
+$\beta_1 \times \log(12) = 5.330 \times 2.485 \approx 13.24$:
+
+$$\beta_0' = -7.460 - 13.24 \approx -20.70$$
+
+which matches the value in the table.
+
+
+
+::: {.callout-important title="Recall"}
+
+Changing units of measurement leaves statistical significance and the model's goodness of fit, $R^2$, unchanged.
+:::
+
+
+
+## Dummy Variables and Logs:
+
+
+We return to the final example from Tutorial 2, with $wage$ expressed in logs and dummy variables with multiple categories.
+
+We construct the following dummy variables:
+
+```{r}
+wage1 <- wage1 %>%
+  mutate(
+    marrmale = ifelse(female == 0 & married == 1, 1, 0),
+    marrfemale = ifelse(female == 1 & married == 1, 1, 0),
+    singfem = ifelse(female == 1 & married == 0, 1, 0)
+  )
+```
+
+
+```{r}
+reg_logwage_dummy <- feols(log(wage) ~ marrmale + marrfemale + singfem + educ + exper + tenure, data = wage1, vcov = "hetero")
+modelsummary(
+  list("Log Wage" = reg_logwage_dummy),
+  title = "Log(wage) with Marital Status and Gender Dummies",
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+
+Recall:
+
+- dummy variables are interpreted relative to the omitted category (single men)
+- the dependent variable is in logs (log($wage$))
+
+
+Therefore, the coefficients on the three dummy variables measure the percentage difference in $wage$ relative to single men.
+
+- Married men ($marrmale$) earn, on average, 29.2% more than single men, holding constant years of education, years of experience, and years with the same employer.
+
+- Married women earn, on average, 12% less than single men, holding constant years of education, years of experience, and years with the same employer.
+
+
+- Single women earn, on average, 9.7% less than single men, holding constant years of education, years of experience, and years with the same employer.
+
+
+
+
+## Example: Campus Crime
+
+`campus` contains data on 97 colleges and universities. $crime$ is the annual number of crimes on campus, $enroll$ is the number of enrolled students, and $police$ is the number of campus police officers.
+
+```{r}
+data("campus", package = "wooldridge")
+```
+
+
+
+
+```{r}
+reg_log_crime <- feols(log(crime) ~ log(enroll), data = campus, vcov = "hetero")
+reg_log_crime2 <- feols(log(crime) ~ log(enroll) + log(police), data = campus, vcov = "hetero")
+modelsummary(
+  list("Log Crime" = reg_log_crime, "Log Crime (with police)" = reg_log_crime2),
+  title = "Campus Crime",
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+
+**Coefficients:**
+
+- A 1% increase in enrollment is associated, on average, with a 1.27% increase in crimes.
+
+- Holding the number of police officers constant, a 1% increase in enrollment is associated, on average, with a 0.92% increase in crimes.
+
+::: {.callout-tip title="Try It"}
+If enrollment increased by 2%, by how much would the crimes predicted by the log-log model increase?
+:::
+
+**Limitations of the regression:** we are not considering other factors. Higher enrollment may be correlated with other factors that cause more crimes: larger universities may be located in larger cities, which in turn may have more crime.

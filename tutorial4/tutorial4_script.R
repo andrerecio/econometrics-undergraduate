@@ -1,4 +1,4 @@
-# Esercitazione 4 — Nonlinearità: polinomi
+# Tutorial 4 - Nonlinearity: polynomials
 
 # Setup ----
 library(tidyverse)
@@ -11,46 +11,46 @@ library(wooldridge)
 data("wage1", package = "wooldridge")
 
 
-# Introduzione: regressione di wage su exper + exper^2 ----
-# Nota: in fixest l'operatore ^ è elevamento a potenza, quindi exper^2 == I(exper^2).
-# In lm/glm/lme4 invece serve I(exper^2): senza I() il termine quadratico
-# verrebbe ignorato silenziosamente.
+# Introduction: regression of wage on exper + exper^2 ----
+# Note: in fixest the ^ operator is exponentiation, so exper^2 == I(exper^2).
+# In lm/glm/lme4, I(exper^2) is required; without I(), the quadratic
+# term would be silently ignored.
 reg_wage_exper <- feols(wage ~ exper + exper^2, data = wage1, vcov = "hetero")
 modelsummary(list("Wage" = reg_wage_exper), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
-# Grafico: lineare vs polinomio quadratico ----
-# 1. Previsione dei valori stimati
+# Plot: linear vs quadratic polynomial ----
+# 1. Predicted values
 wage1 <- wage1 %>%
   mutate(wageexp_pred = predict(reg_wage_exper))
 
-# 2. Filtro per exper ≤ 40
+# 2. Filter to exper <= 40
 wage_cut <- wage1 %>% filter(exper <= 40)
 
-# 3. Trova il punto massimo della curva wageexp_pred
+# 3. Find the maximum point of the wageexp_pred curve
 punto_max <- wage_cut %>%
   filter(wageexp_pred == max(wageexp_pred, na.rm = TRUE))
 
-# 4. Grafico
+# 4. Plot
 ggplot(wage_cut, aes(x = exper)) +
-  geom_line(aes(y = wageexp_pred), color = "#ff7f0e", linewidth = 1.5) +              # curva stimata
-  geom_smooth(aes(y = wage), method = "lm", se = FALSE, color = "#1f77b4", linewidth = 1.5) + # retta OLS
+  geom_line(aes(y = wageexp_pred), color = "#ff7f0e", linewidth = 1.5) +              # estimated curve
+  geom_smooth(aes(y = wage), method = "lm", se = FALSE, color = "#1f77b4", linewidth = 1.5) + # OLS line
   geom_point(data = punto_max, aes(y = wageexp_pred), color = "#2ca02c", size = 5) +
   labs(
-    title = "Confronto: lineare vs polinomio quadratico",
-    x = "Anni di Esperienza",
-    y = "Salario orario in $"
+    title = "Comparison: Linear vs Quadratic Polynomial",
+    x = "Years of Experience",
+    y = "Hourly wage in $"
   ) +
   theme_minimal()
 
 
-# Polinomio con controlli (educ, tenure) ----
+# Polynomial with controls (educ, tenure) ----
 reg_wage_exper2 <- feols(wage ~ exper + exper^2 + educ + tenure, data = wage1, vcov = "hetero")
 modelsummary(list("Wage" = reg_wage_exper, "Wage" = reg_wage_exper2), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
-# Trovare il picco: derivata prima ed effetto marginale ----
-# dy/dx = b1 + 2*b2*x   →   picco in x* = -b1 / (2*b2)
+# Finding the peak: first derivative and marginal effect ----
+# dy/dx = b1 + 2*b2*x; peak at x* = -b1 / (2*b2)
 b1 <- coef(reg_wage_exper)["exper"]
 b2 <- coef(reg_wage_exper)["I(exper^2)"]
 xstar <- -b1 / (2 * b2)
@@ -66,21 +66,21 @@ ggplot(deriv_df, aes(x = exper, y = d)) +
   geom_line(color = "#ff7f0e", linewidth = 1.5) +
   annotate("point", x = xstar, y = 0, color = "#2ca02c", size = 5) +
   labs(
-    title = "Derivata prima: effetto marginale di un anno di esperienza",
-    x = "Anni di esperienza",
-    y = "Effetto marginale stimato"
+    title = "First Derivative: Marginal Effect of One Year of Experience",
+    x = "Years of experience",
+    y = "Estimated marginal effect"
   ) +
   theme_minimal()
 
 
-# Log e polinomi ----
+# Logs and Polynomials ----
 reg_logwage_exper <- feols(log(wage) ~ exper + exper^2 + educ + tenure, data = wage1, vcov = "hetero")
 modelsummary(list("Wage" = reg_wage_exper, "Log Wage" = reg_logwage_exper), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
-# In deviazione dalla media: regressione semplice ----
-# Centrando exper, l'intercetta diventa il salario predetto per un individuo
-# con esperienza pari alla media (invece che con zero anni di esperienza).
+# Deviation from the mean: simple regression ----
+# By centering exper, the intercept becomes the predicted wage for an individual
+# with experience equal to the mean (rather than zero years of experience).
 wage1 <- wage1 %>%
   mutate(exper_center = exper - mean(exper, na.rm = TRUE))
 
@@ -89,18 +89,18 @@ reg_exper <- feols(wage ~ exper, data = wage1, vcov = "hetero")
 modelsummary(list("Wage" = reg_experc, "Wage" = reg_exper), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
-# Deviazione dalla media e polinomi ----
-# Con il polinomio, il coefficiente di exper_center rappresenta l'effetto marginale
-# quando exper è uguale alla media (invece che quando è uguale a zero).
+# Deviation from the mean and polynomials ----
+# With the polynomial, the coefficient on exper_center represents the marginal effect
+# when exper is equal to its mean (rather than zero).
 reg_wagepolcenter <- feols(wage ~ educ + exper_center + exper_center^2 + tenure, data = wage1, vcov = "hetero")
 reg_wagepol <- feols(wage ~ educ + exper + exper^2 + tenure, data = wage1, vcov = "hetero")
 modelsummary(list("Wage" = reg_wagepolcenter, "Wage" = reg_wagepol), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
-# Statistiche descrittive di exper ----
+# Descriptive statistics for exper ----
 desc_exper <- wage1 %>%
   summarise(
-    Media = mean(exper, na.rm = TRUE),
+    Mean = mean(exper, na.rm = TRUE),
     Q1 = quantile(exper, 0.25, na.rm = TRUE),
     Mediana = median(exper, na.rm = TRUE),
     Q3 = quantile(exper, 0.75, na.rm = TRUE)

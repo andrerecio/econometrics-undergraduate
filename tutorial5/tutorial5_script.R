@@ -1,4 +1,4 @@
-# Esercitazione 5 - Nonlinearità: interazioni
+# Tutorial 5 - Nonlinearity: interactions
 
 
 # Setup -------------------------------------------------------------------
@@ -11,8 +11,8 @@ library(wooldridge)
 data("wage1", package = "wooldridge")
 
 
-# Categorie multiple: tre dummy mutuamente esclusive ----------------------
-# Categoria omessa: uomini single (female = 0, married = 0)
+# Multiple categories: three mutually exclusive dummy variables ----------------------
+# Omitted category: single men (female = 0, married = 0)
 
 wage1 <- wage1 %>%
   mutate(
@@ -25,14 +25,14 @@ reg_wage_sm1 <- feols(wage ~ marrmale + marrfemale + singfem, data = wage1, vcov
 modelsummary(list("Wage" = reg_wage_sm1), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
-# Interazione tra due variabili dummy: female * married -------------------
+# Interaction between two dummy variables: female * married -------------------
 
 reg_wage_marrfe <- feols(wage ~ female * married, data = wage1, vcov = "hetero")
 modelsummary(list("Wage" = reg_wage_marrfe), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
-# Modello speculare: male * married ---------------------------------------
-# La categoria omessa diventa: donne single
+# Mirror model: male * married ---------------------------------------
+# The omitted category becomes: single women
 
 wage1 <- wage1 %>%
   mutate(male = 1 - female)
@@ -44,7 +44,7 @@ modelsummary(
 )
 
 
-# Interazione tra dummy e continua: educ * female -------------------------
+# Interaction between a dummy variable and a continuous variable: educ * female -------------------------
 
 reg_wage_educfe <- feols(wage ~ educ * female, data = wage1, vcov = "hetero")
 modelsummary(list("Wage" = reg_wage_educfe), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
@@ -53,12 +53,12 @@ modelsummary(list("Wage" = reg_wage_educfe), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 library(marginaleffects)
 plot_predictions(reg_wage_educfe,
                  condition = c("educ", "female")) +
-  labs(title = "Salario predetto per livelli di istruzione e genere",
-       x = "Anni di istruzione",
-       y = "Salario predetto")
+  labs(title = "Predicted Wage by Education and Gender",
+       x = "Years of education",
+       y = "Predicted wage")
 
 
-# Interazione tra due variabili continue: educ * exper --------------------
+# Interaction between two continuous variables: educ * exper --------------------
 
 reg_wage_educexper <- feols(wage ~ educ * exper, data = wage1, vcov = "hetero")
 reg_wage_educexper2 <- feols(wage ~ educ * exper + female + tenure, data = wage1, vcov = "hetero")
@@ -67,12 +67,12 @@ modelsummary(
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
-# Statistiche descrittive di exper per valutare l'effetto marginale
-# in valori rilevanti (mediana, media, terzo quartile)
+# Descriptive statistics for exper to evaluate the marginal effect
+# at relevant values (median, mean, third quartile)
 datasummary(exper ~ Min + P25 + Median + Mean + P75 + Max, data = wage1)
 
 
-# Centratura: educ_center e exper_center ----------------------------------
+# Centering: educ_center and exper_center --------------------------------
 
 wage1 <- wage1 %>%
   mutate(
@@ -81,17 +81,17 @@ wage1 <- wage1 %>%
   )
 
 
-# Interazione tra continue centrate: educ_center * exper_center -----------
-# Il coefficiente di educ_center rappresenta l'effetto di un anno
-# aggiuntivo di istruzione quando exper è alla media.
+# Interaction between centered continuous variables: educ_center * exper_center -----------
+# The coefficient on educ_center represents the effect of one
+# additional year of education when exper is at its mean.
 
 reg_wage_educexper_center <- feols(wage ~ educ_center * exper_center, data = wage1, vcov = "hetero")
 modelsummary(list("Wage" = reg_wage_educexper_center), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
-# Interazione dummy e continua centrata: educ_center * female -------------
-# Il coefficiente di female rappresenta la differenza salariale
-# tra donne e uomini quando educ è alla media.
+# Interaction between a dummy variable and a centered continuous variable: educ_center * female -------------
+# The coefficient on female represents the wage difference
+# between women and men when educ is at its mean.
 
 reg_wage_educfe_center <- feols(wage ~ educ_center * female, data = wage1, vcov = "hetero")
 modelsummary(
