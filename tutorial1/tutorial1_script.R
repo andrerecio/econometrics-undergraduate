@@ -1,32 +1,32 @@
 # ==============================================================================
-# Esercitazione N.1 - Regressione Lineare Semplice
-# Econometria I
+# Tutorial 1 - Simple Linear Regression
+# Econometrics I
 # ==============================================================================
 
 # install.packages(kableExtra)
 
-# --- Pacchetti ----------------------------------------------------------------
+# --- Packages ----------------------------------------------------------------
 
 library(tidyverse)    # dplyr, tidyr, ggplot2, readr
-library(knitr)        # tabelle con kable()
-library(kableExtra)   # stili per le tabelle
-library(modelsummary) # tabelle di regressione
+library(knitr)        # tables with kable()
+library(kableExtra)   # table styles
+library(modelsummary) # regression tables
 library(wooldridge)   # dataset wage1
-library(fixest)       # stima OLS con feols()
+library(fixest)       # estimate OLS with feols()
 
-# --- Dati ---------------------------------------------------------------------
+# --- Data ---------------------------------------------------------------------
 
 # Current Population Survey, 1976
 data("wage1", package = "wooldridge")
 
-# Prime osservazioni
+# First observations
 head(wage1)
 
-# Variabili di interesse:
-# wage = retribuzione media oraria in dollari (1976)
-# educ = anni di istruzione
+# Variables of interest:
+# wage = average hourly earnings in 1976 dollars
+# educ = years of education
 
-# --- Statistiche descrittive --------------------------------------------------
+# --- Descriptive Statistics ---------------------------------------------------
 
 stat <- wage1 %>%
   summarise(
@@ -38,22 +38,22 @@ stat <- wage1 %>%
   )
 
 stat %>%
-  kable(caption = "Statistiche descrittive", digits = 2) %>%
+  kable(caption = "Descriptive statistics", digits = 2) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
 
-# --- Grafici ------------------------------------------------------------------
+# --- Graphs -------------------------------------------------------------------
 
-# Istogramma di wage
+# Histogram of wage
 ggplot(wage1, aes(x = wage)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 15) +
-  labs(title = "Distribuzione di wage", x = "Wage", y = "Frequenza") +
+  labs(title = "Distribution of wage", x = "Wage", y = "Frequency") +
   theme_minimal()
 
-# Istogramma di educ
+# Histogram of educ
 ggplot(wage1, aes(x = educ)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 15) +
-  labs(title = "Distribuzione dell'istruzione",
-       x = "Anni di Istruzione", y = "Frequenza") +
+  labs(title = "Distribution of education",
+       x = "Years of education", y = "Frequency") +
   theme_minimal()
 
 # Scatterplot wage vs educ
@@ -61,27 +61,27 @@ ggplot(wage1, aes(y = wage, x = educ)) +
   geom_point(color = "black") +
   theme_minimal()
 
-# Scatterplot con retta di regressione
+# Scatterplot with regression line
 ggplot(wage1, aes(y = wage, x = educ)) +
   geom_point(color = "black") +
   geom_smooth(method = "lm", color = "skyblue", se = FALSE) +
   theme_minimal()
 
-# --- Regressione lineare semplice ---------------------------------------------
+# --- Simple Linear Regression -------------------------------------------------
 
 # wage_i = beta_0 + beta_1 * educ_i + u_i
 
-# Errori standard robusti all'eteroschedasticità
+# Heteroskedasticity-robust standard errors
 reg1 <- feols(wage ~ educ, data = wage1, vcov = "hetero")
 reg1
 
-# Errori standard omoschedastici (equivalente a lm())
+# Homoskedastic standard errors (equivalent to lm())
 reg1_ho <- feols(wage ~ educ, data = wage1)
 reg1_ho
 
-# --- Eteroschedasticità -------------------------------------------------------
+# --- Heteroskedasticity -------------------------------------------------------
 
-# Varianza di wage per valori specifici di educ
+# Variance of wage for specific values of educ
 educ_valori <- c(4, 8, 12, 16)
 
 varianza_valori <- wage1 %>%
@@ -92,11 +92,11 @@ varianza_valori <- wage1 %>%
 
 ggplot(varianza_valori, aes(x = educ, y = varianza)) +
   geom_point(size = 3, color = "darkblue") +
-  labs(title = "Varianza del salario per valori specifici di istruzione",
-       x = "Anni di istruzione", y = "Varianza di wage") +
+  labs(title = "Variance of wage for specific education values",
+       x = "Years of education", y = "Variance of wage") +
   theme_minimal()
 
-# Varianza di wage per 10 gruppi di educ
+# Variance of wage for 10 educ groups
 varianza_educ <- wage1 %>%
   mutate(gruppo_educ = cut(educ, breaks = 10)) %>%
   group_by(gruppo_educ) %>%
@@ -107,69 +107,69 @@ varianza_educ <- wage1 %>%
 
 ggplot(varianza_educ, aes(x = media_educ, y = varianza)) +
   geom_point(size = 3, color = "darkblue") +
-  labs(title = "Varianza del salario per livello di istruzione",
-       x = "Anni di istruzione (media per gruppo)",
-       y = "Varianza di wage") +
+  labs(title = "Variance of wage by education level",
+       x = "Years of education (group mean)",
+       y = "Variance of wage") +
   theme_minimal()
 
-# Confronto errori standard robusti vs omoschedastici
+# Comparison of robust and homoskedastic standard errors
 modelsummary(
-  list("Wage (robusti)" = reg1, "Wage (omosched.)" = reg1_ho),
+  list("Wage (robust)" = reg1, "Wage (homosked.)" = reg1_ho),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
-# --- Cambio di unità di misura ------------------------------------------------
+# --- Changing Units of Measurement -------------------------------------------
 
-# Variabile dipendente: wage in centinaia di dollari
+# Dependent variable: wage in hundreds of dollars
 wage1 <- wage1 %>%
   mutate(wage_100 = wage / 100)
 
 reg2 <- feols(wage_100 ~ educ, data = wage1, vcov = "hetero")
 
 modelsummary(
-  list("Wage ($)" = reg1, "Wage (centinaia $)" = reg2),
+  list("Wage ($)" = reg1, "Wage (hundreds of $)" = reg2),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
-# Variabile dipendente: wage mensile (7h x 5gg x 4 sett = 140)
+# Dependent variable: monthly wage (7h x 5 days x 4 weeks = 140)
 wage1 <- wage1 %>%
   mutate(wage_monthly = wage * 140)
 
 reg3 <- feols(wage_monthly ~ educ, data = wage1, vcov = "hetero")
 
 modelsummary(
-  list("Wage orario" = reg1, "Wage mensile" = reg3),
+  list("Hourly wage" = reg1, "Monthly wage" = reg3),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
-# Variabile indipendente: educ in mesi
+# Independent variable: educ in months
 wage1 <- wage1 %>%
   mutate(educ_mesi = educ * 12)
 
 reg4 <- feols(wage ~ educ_mesi, data = wage1, vcov = "hetero")
 
 modelsummary(
-  list("Wage (educ anni)" = reg1, "Wage (educ mesi)" = reg4),
+  list("Wage (educ years)" = reg1, "Wage (educ months)" = reg4),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
-# --- Intervalli di confidenza e test di ipotesi -------------------------------
+# --- Confidence Intervals and Hypothesis Tests --------------------------------
 
-# IC al 95%: beta_1 +/- 1.96 * SE(beta_1)
+# 95% CI: beta_1 +/- 1.96 * SE(beta_1)
 # 0.541 +/- 1.96 * 0.061 = [0.422, 0.660]
 confint(reg1)
 
-# --- Variabili dummy ----------------------------------------------------------
+# --- Dummy Variables ----------------------------------------------------------
 
-# Tabella di frequenza
+# Frequency table
 tabledummy <- table(wage1$female)
-names(tabledummy) <- c("Maschio", "Femmina")
+names(tabledummy) <- c("Male", "Female")
 
-kable(tabledummy, caption = "Numero di Maschi e Femmine") %>%
+kable(tabledummy, caption = "Number of Men and Women") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
 
-# Statistiche descrittive per genere
-stat_genere <- wage1 %>%
+# Descriptive statistics by gender
+stat_gender <- wage1 %>%
   group_by(female) %>%
   summarize(
     wage_mean   = mean(wage, na.rm = TRUE),
@@ -179,28 +179,28 @@ stat_genere <- wage1 %>%
     educ_median = median(educ, na.rm = TRUE)
   )
 
-stat_genere %>%
-  kable(caption = "Statistiche descrittive per genere", digits = 2) %>%
+stat_gender %>%
+  kable(caption = "Descriptive statistics by gender", digits = 2) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
 
-# Media della dummy = proporzione di female nel campione
+# Mean of the dummy = proportion of female observations in the sample
 mean(wage1$female)  # 252/526 ≈ 0.48
 
-# Regressione con dummy female
+# Regression with the female dummy
 # wage_i = beta_0 + beta_1 * female_i + u_i
 reg_female <- feols(wage ~ female, data = wage1, vcov = "hetero")
 
 modelsummary(
   list("Wage" = reg_female),
   gof_omit = "AIC|BIC|RMSE|R2 Adj.",
-  title = "La variabile dipendente è Wage"
+  title = "The dependent variable is Wage"
 )
 
-# Cambio di categoria di riferimento: dummy male
+# Changing the reference category: male dummy
 wage1 <- wage1 %>%
   mutate(male = ifelse(female == 1, 0, 1))
 
-# Modo equivalente: male = 1 - female
+# Equivalent method: male = 1 - female
 
 reg_male <- feols(wage ~ male, data = wage1, vcov = "hetero")
 
@@ -210,7 +210,7 @@ modelsummary(
   title = "Female = 1 (col. 1) vs Male = 1 (col. 2)"
 )
 
-# Multicollinearità perfetta: male + female = 1 = intercetta
-# feols rimuove automaticamente una delle due variabili
+# Perfect multicollinearity: male + female = 1 = intercept
+# feols automatically removes one of the two variables
 reg2dummy <- feols(wage ~ male + female, data = wage1, vcov = "hetero")
 reg2dummy

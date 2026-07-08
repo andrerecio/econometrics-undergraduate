@@ -1,4 +1,4 @@
-#Esercitazione 10 - Script
+#Tutorial 10 - Script
 
 
 library(tidyverse)

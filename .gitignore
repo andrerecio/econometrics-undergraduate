@@ -45,3 +45,5 @@ Desktop.ini
 # all Claude Code files
 *.claude
 CLAUDE.md
+
+**/*.quarto_ipynb

@@ -1,5 +1,5 @@
 # ==============================================================================
-# Esercitazioni di Econometria — Introduzione a R
+# Esercitazioni di Econometria — Introduction a R
 # Sapienza Università di Roma
 # ==============================================================================
 
@@ -31,10 +31,10 @@ data("wage1", package = "wooldridge")
 str(wage1)
 
 # ==============================================================================
-# 3. Manipolare i dati con dplyr
+# 3. Manipolare i data con dplyr
 # ==============================================================================
 
-# Filtriamo le osservazioni con più di 12 anni di istruzione
+# Filtriamo le observations con più di 12 years of education
 wage_educ_higher <- wage1 |>
   filter(educ > 12)
 
@@ -54,7 +54,7 @@ wage1 |>
 
 # --- Per gruppi ---------------------------------------------------------------
 
-# female = 0 → uomini, female = 1 → donne
+# female = 0 → men, female = 1 → women
 wage1 |>
   group_by(female) |>
   summarise(
@@ -89,11 +89,11 @@ t.test(wage1$wage)
 # --- Verifica della differenza tra medie --------------------------------------
 
 # Statistiche descrittive per gruppo
-# female = 0 → uomini, female = 1 → donne
+# female = 0 → men, female = 1 → women
 wagediff <- wage1 |>
   group_by(female) |>
   summarise(
-    wage_mean = mean(wage),  # media salariale per gruppo
+    wage_mean = mean(wage),  # media wagesale per gruppo
     wage_sd   = sd(wage),    # deviazione standard per gruppo
     n         = n()          # numerosità per gruppo
   )
@@ -104,9 +104,9 @@ wagediff
 se <- sqrt(wagediff$wage_sd[1]^2 / wagediff$n[1] +
              wagediff$wage_sd[2]^2 / wagediff$n[2])
 
-# Statistica t: (media_uomini - media_donne) / SE
-# H0: mu_uomini - mu_donne = 0
-# H1: mu_uomini - mu_donne ≠ 0
+# Statistica t: (media_men - media_women) / SE
+# H0: mu_men - mu_women = 0
+# H1: mu_men - mu_women ≠ 0
 t_stat <- (wagediff$wage_mean[1] - wagediff$wage_mean[2]) / se
 t_stat
 
@@ -116,11 +116,11 @@ t_stat
 # 6. Grafici con ggplot2
 # ==============================================================================
 
-# Distribuzione del salario orario
+# Distribuzione del hourly wage
 ggplot(wage1, aes(x = wage)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 20) +
   labs(
-    title = "Distribuzione del salario orario",
+    title = "Distribuzione del hourly wage",
     x = "Salario orario (dollari)",
     y = "Frequenza"
   ) +
@@ -132,7 +132,7 @@ ggplot(wage1, aes(x = wage)) +
 
 # Carichiamo il dataset da GitHub
 # In alternativa, scaricatelo e importatelo con Import Dataset
-url_data <- "https://raw.githubusercontent.com/andrerecio/econometria-triennale/main/intro/crime2_clean.csv"
+url_data <- "https://raw.githubusercontent.com/andrerecio/econometrics-undergraduate/main/introduction/crime2_clean.csv"
 
 crime <- read_csv(url_data, show_col_types = FALSE, na = ".")
 glimpse(crime)

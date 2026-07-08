@@ -1,0 +1,64 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - introduction/*.qmd
+    - tutorial*/*.qmd
+    - problem-sets/*.qmd
+    - "!slides-iv-2/*.qmd"
+
+website:
+  title: "Undergraduate Econometrics"
+  site-url: "https://andrerecio.github.io/econometrics-undergraduate/"
+  repo-url: "https://github.com/andrerecio/econometrics-undergraduate"
+  repo-actions: [issue]
+  navbar:
+    left:
+      - text: "Home"
+        href: index.qmd
+      - text: "Introduction"
+        menu:
+          - text: "Introduction to R"
+            href: introduction/introduction.qmd
+          - text: "Regression with fixest"
+            href: introduction/regression_with_fixest.qmd
+      - text: "Tutorials"
+        menu:
+          - text: "Tutorial 1"
+            href: tutorial1/tutorial1.qmd
+          - text: "Tutorial 2"
+            href: tutorial2/tutorial2.qmd
+          - text: "Tutorial 3"
+            href: tutorial3/tutorial3.qmd
+          - text: "Tutorial 4"
+            href: tutorial4/tutorial4.qmd
+          - text: "Tutorial 5"
+            href: tutorial5/tutorial5.qmd
+          - text: "Tutorial 6"
+            href: tutorial6/tutorial6.qmd
+          - text: "Tutorial 7"
+            href: tutorial7/tutorial7.qmd
+          - text: "Tutorial 8"
+            href: tutorial8/tutorial8.qmd
+          - text: "Tutorial 9"
+            href: tutorial9/tutorial9.qmd
+          - text: "Tutorial 10"
+            href: tutorial10/tutorial10.qmd
+      - text: "Problem Sets"
+        menu:
+          - text: "Problem Set 1"
+            href: problem-sets/problem_set_01.qmd
+          - text: "Problem Set 1 Solutions"
+            href: problem-sets/problem_set_01_solutions.qmd
+          - text: "Log Models Review"
+            href: problem-sets/log_models_review.qmd
+
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-title: "Contents"
+    code-copy: true
+
+lang: en

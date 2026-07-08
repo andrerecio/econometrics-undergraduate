@@ -5,11 +5,11 @@
 # Obiettivo: mostrare che β̂₁ si distribuisce normalmente
 # anche quando gli errori NON sono normali.
 #
-# Il modello vero è:  y = 2 + 3x + u
+# Il model vero è:  y = 2 + 3x + u
 # dove u segue una distribuzione esponenziale centrata
 # (fortemente asimmetrica, non normale).
 #
-# Ripetiamo la stima OLS n_sim volte su campioni diversi,
+# Ripetiamo la estimate OLS n_sim volte su campioni diversi,
 # salviamo ogni β̂₁, e poi guardiamo la distribuzione:
 # grazie al Teorema del Limite Centrale, sarà normale.
 # ============================================================
@@ -19,9 +19,9 @@ library(fixest)
 set.seed(1234)
 
 # --- Parametri della simulazione ---
-beta0 <- 2              # vera intercetta
-beta1 <- 3              # vero coefficiente (quello che ci interessa)
-n     <- 300            # osservazioni per campione
+beta0 <- 2              # vera intercept
+beta1 <- 3              # vero coefficient (quello che ci interessa)
+n     <- 300            # observations per sample
 n_sim <- 10000          # quante volte ripetiamo l'esperimento
 
 # --- Vettore dove salviamo i β̂₁ ---
@@ -38,14 +38,14 @@ for (i in 1:n_sim) {
   #    u <- runif(n, -1, 1) sarebbe uniforme
   u <- rexp(n) - 1
 
-  # 3. Generiamo y dal modello vero
+  # 3. Generiamo y dal model vero
   y <- beta0 + beta1 * x + u
 
   # 4. Stimiamo OLS con feols
   dat <- data.frame(y = y, x = x)
   fit <- feols(y ~ x, data = dat)
 
-  # 5. Salviamo β̂₁ (secondo coefficiente)
+  # 5. Salviamo β̂₁ (secondo coefficient)
   beta1_hat[i] <- coef(fit)["x"]
 }
 

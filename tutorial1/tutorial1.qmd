@@ -1,0 +1,672 @@
+---
+title: "Tutorial 1"
+subtitle: "Simple Linear Regression"
+author: "Andrea Recine"
+date: today
+lang: en
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    toc-location: right       
+    number-sections: true
+    
+    # Code
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+    
+    # Output
+    embed-resources: true
+    
+    # Typography
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+## Introduction
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(tinytable)
+library(modelsummary)
+```
+
+`library(tidyverse)` contains several packages, including:
+
+-   dplyr (data management)
+
+-   tidyr (data reshaping)
+
+-   ggplot2 (graphs)
+
+-   readr (CSV import and other data-import tools)
+
+Alternatively, load the packages individually: `library(ggplot2)` or `library(dplyr)`.
+
+The other libraries, such as `library(knitr)`, `library(tinytable)`, and `library(modelsummary)`, are useful for creating tables and displaying regression results in a clearer and more polished format.
+
+
+## Data Description
+
+```{r}
+#| warning: false
+library(wooldridge)
+```
+
+Consider the **wage1** dataset in `library(wooldridge)`, drawn from the 1976 Current Population Survey, and inspect its structure using `head(wage1)`.
+
+```{r}
+data("wage1", package = "wooldridge")
+head(wage1)
+```
+
+We focus on the following variables:
+
+-   $wage$: average hourly earnings in 1976 dollars
+-   $educ$: years of education
+
+```{r}
+# Descriptive statistics
+stat <- wage1 %>%
+       summarise(
+       wage_mean = mean(wage, na.rm = TRUE),
+       wage_median = median(wage, na.rm = TRUE),
+       wage_sd = sd(wage, na.rm = TRUE),
+       education_years_mean = mean(educ, na.rm = TRUE),
+       education_years_median = median(educ, na.rm = TRUE)
+  )
+# Display results
+tt(stat, width = 1, digits = 2, caption = "Descriptive statistics")
+```
+
+-   `summarise` summarizes the data.
+
+-   `%>%`, or `|>` starting from R 4.1.0, is the pipe operator used to chain multiple operations.
+
+-   `tt()` is a function from the `tinytable` package used to display tables in a clearer and more polished format.
+
+Another useful library for data management is `library(data.table)`, while `library(kableExtra)` is useful for formatting tables.
+
+---
+
+`ggplot2` is based on the "Grammar of Graphics" (gg = _grammar of graphics_). It generates graphs through a layered approach using the `+` symbol and is much more flexible and customizable for complex graphs than base R graphics.
+
+If you have not loaded `library(tidyverse)`, then you must use `library(ggplot2)`.
+
+```{r}
+# Histogram with ggplot
+ggplot(wage1, aes(x = wage)) +
+geom_histogram(fill = "lightblue", color = "black", bins = 15) +
+labs(title = "Distribution of wage",
+x = "Wage",
+y = "Frequency") +
+theme_minimal()
+```
+
+```{r}
+# Histogram with ggplot2
+ggplot(wage1, aes(x = educ)) +
+geom_histogram(fill = "lightblue", color = "black", bins = 15) +
+labs(title = "Distribution of education",
+x = "Years of education",
+y = "Frequency") +
+theme_minimal()
+```
+
+The histogram shows a high concentration around 12 years of education, which corresponds to a high school diploma in the United States.
+
+### Relationship between hourly wage and years of education:
+
+```{r}
+ggplot(wage1, aes(y = wage, x = educ)) + 
+  geom_point(color = "black") + 
+  theme_minimal()
+```
+
+With the regression line:
+
+```{r}
+#| warning: false
+## Second plot
+ggplot(wage1, aes(y = wage, x = educ)) + 
+  geom_point(color = "black") + 
+  geom_smooth(method = "lm", color = "skyblue", se = FALSE) +
+  theme_minimal()
+```
+
+`lm` stands for linear model.
+
+## Simple Linear Regression
+
+Estimate the following regression:
+
+$$
+wage_i = \beta_0 + \beta_1 educ_i + u_i
+$$
+
+$wage$ is measured in dollars per hour, and $educ$ is measured in years of education.
+
+<br>
+
+`library(fixest)` is a very versatile library, especially for panel data, and it makes it easy to correct standard errors using `vcov = "hetero"` or `vcov = "hc1"`.
+
+
+
+In other courses, you may have seen regressions estimated with `lm(y~x)`. In that case, the regression output reports homoskedastic standard errors, which can be corrected using `library(sandwich)` with the function `vcovHC()`.
+
+For the rest of the course, we will use `library(fixest)` to estimate regressions and correct standard errors for heteroskedasticity.
+
+```{r}
+# Baseline regression model
+library(fixest)
+reg1 <- feols(wage ~ educ, data = wage1, vcov = "hetero")
+reg1
+```
+
+- `feols()` estimates the linear regression.
+
+- $wage$ is the dependent variable.
+
+- $educ$ is the independent variable, or regressor.
+
+- `vcov = "hetero"` selects heteroskedasticity-robust standard errors.
+
+If `vcov = "hetero"` is not selected, the standard errors are homoskedastic:
+
+```{r}
+reg1_ho <- feols(wage ~ educ, data = wage1)
+reg1_ho
+```
+
+`feols(y ~ x)` is equivalent to `lm(y ~ x)`.
+
+The regression output reports *IID* standard errors, meaning independent and identically distributed standard errors, which are homoskedastic.
+
+### Heteroskedasticity
+
+The first assumption needed for unbiased estimation is $E(u_i|educ_i)=0$.
+
+::: {.callout-tip}
+
+## Question
+What are the other OLS assumptions for causal inference?
+:::
+
+
+
+In the population, this implies that $E(wage_i|educ_i)= \beta_0 + \beta_1 educ_i$.
+
+
+Assuming homoskedasticity, that is, $Var(u_i|educ_i)= \sigma^2$, is equivalent in the population to assuming $Var(wage_i|educ_i) = \sigma^2$.
+
+
+While the expected value of $wage$ may increase as years of education increase, which is what we are interested in, under homoskedasticity the variance of $wage$ does not change as $educ$ changes. That is, we are assuming that the variance of wage conditional on education is constant.
+
+
+This is not realistic. Individuals with more education have a wider range of job opportunities and interests, which leads to greater variability in $wage$ at higher levels of education. Individuals with low levels of education have fewer opportunities and often earn wages close to the minimum wage. This tends to reduce the variability of $wage$ at lower levels of education.
+
+
+When $Var(u_i|x_i)$ depends on $x_i$, the error term exhibits heteroskedasticity, or nonconstant variance. Since $Var(u_i|x)=Var(y|x)$, heteroskedasticity is present whenever $Var(y_i|x_i)$ is a function of $x_i$.
+
+
+::: {.callout-caution collapse="false"}
+## Implications of heteroskedasticity
+
+The OLS assumptions do not impose restrictions on the conditional variance. Therefore, OLS estimators remain unbiased, consistent, and asymptotically normal even in the presence of heteroskedasticity.
+
+Hypothesis tests and confidence intervals based on heteroskedasticity-robust standard errors are valid regardless of the structure of the error variance, allowing valid statistical inference even in the presence of heteroskedasticity. These formulas were proposed by Eicker (1967), Huber (1967), and White (1980), and are commonly known as Eicker-Huber-White standard errors, sometimes simply White standard errors, or robust standard errors.
+:::
+
+
+```{r}
+# Select specific values of educ
+educ_valori <- c(4, 8, 12, 16)
+
+# Compute the variance of wage for those specific values of educ
+varianza_valori <- wage1 %>%
+  filter(educ %in% educ_valori) %>%
+  group_by(educ) %>%
+  summarise(varianza = var(wage, na.rm = TRUE)) %>%
+  ungroup()
+
+# Plot
+ggplot(varianza_valori, aes(x = educ, y = varianza)) +
+  geom_point(size = 3, color = "darkblue") +
+  labs(title = "Variance of wage for specific education values",
+       x = "Years of education",
+       y = "Variance of wage") +
+  theme_minimal()
+
+```
+
+-   `group_by` groups the data by categories.
+  
+Now group the observations into 10 education-level groups:
+```{r}
+# 1. Group educ into intervals
+varianza_educ <- wage1 %>%
+  mutate(gruppo_educ = cut(educ, breaks = 10)) %>%
+  group_by(gruppo_educ) %>%
+  summarise(
+    varianza = var(wage, na.rm = TRUE),
+    media_educ = mean(educ, na.rm = TRUE)
+  )
+
+# 2. Plot the variance as a function of educ
+ggplot(varianza_educ, aes(x = media_educ, y = varianza)) +
+  geom_point(size = 3, color = "darkblue") +
+  labs(title = "Variance of wage by education level",
+       x = "Years of education (group mean)",
+       y = "Variance of wage") +
+  theme_minimal()
+```
+
+#### Regression Results
+
+```{r}
+#| label: tab1
+#| tbl-cap: "OLS estimation results. Dependent variable $:$ Wage"
+modelsummary(list("Wage" = reg1, "Wage" = reg1_ho), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+The intercept is -0.90. It represents the estimated average hourly wage, in dollars, for a person with zero years of education. This interpretation has little substantive meaning. It is the expected value when $educ=0$, that is, for a person with no formal education, which may be a rare or unrepresentative case in the population.
+
+
+The coefficient on educ, $\beta_1$, represents the average increase in hourly wage **associated** with an additional year of education.
+
+If $E(u_i|educ_i)=0$, then $\beta_1 = 0.54$ has a causal interpretation: an additional year of education increases the hourly wage by 0.54 dollars per hour, on average. Otherwise, 0.54 dollars is simply a correlation.
+
+
+If we wanted to consider 10 additional years of education: 10 x $\beta_1$ = 10 x 0.54\$ = 5.4 dollars per hour.
+
+Some variables affect both wage ($wage$) and years of education ($educ$). When these variables are included in the error term, they create correlation between $u_i$ and $educ_i$, thereby violating the assumption $E(u_i|educ_i)=0$.
+
+What variables might affect both $wage$ and $educ$? They may be observable, such as experience, family background, and occupation or industry, or unobservable, such as innate ability and social connections.
+
+These omitted variables create an endogeneity problem that makes it difficult to interpret $\beta_1$ as the causal effect of education on wage, because the observed correlation may be partly due to these confounding factors.
+
+
+$R^2$ indicates that approximately 16.5% of the variability in $wage$ is explained by $educ$. This relatively low value suggests **only** that many factors other than education are correlated with wages.
+
+
+::: {.callout-warning collapse="false"}
+## $R^2$
+
+The regression $R^2$ is the fraction of the sample variance of $Y_i$ explained by the regressors.
+
+Remember that:
+
+- A high $R^2$ does not imply that the regressors are the true cause of the dependent variable.
+- A high $R^2$ does not imply the absence of omitted-variable bias.
+- A high $R^2$ does not mean that we have chosen the most appropriate regressors.
+- A low $R^2$ does not imply that we have chosen inappropriate regressors.
+
+:::
+
+
+
+::: {.callout-caution collapse="false"}
+## Asymptotic Theory and Normality of the Errors
+
+Normality of the errors is **not** required for OLS unbiasedness, nor for the property of being the best linear unbiased estimator (BLUE) under the Gauss-Markov assumptions, which require homoskedasticity.
+
+In some courses, you may have seen tests of the "normality" of the residuals presented as a _necessary_ condition for valid inference, or as a way to "validate the model." In reality, the assumption concerns the population errors, which we do not observe. Therefore, tests for error normality, such as the Jarque-Bera test, are based on the OLS residuals. In practice, this test is rarely used. Thanks to the central limit theorem, when the sample is sufficiently large, the asymptotic distribution of the OLS estimators is normal even if the population errors are not normally distributed.
+
+:::
+
+
+
+
+## Changing Units of Measurement
+
+Regression coefficients are expressed in the units of measurement of the data. The value of the coefficients changes if we change the unit of measurement, while the fit of the model to the data does not change. Let us see how the coefficients change when we change the units of measurement of $wage$ and $educ$.
+
+### Dependent Variable: wage
+
+**Hourly wage in hundreds of dollars:** $wage$ is expressed in dollars. We can express it in hundreds of dollars:
+
+```{r}
+wage1 <- wage1 %>%
+  mutate(wage_100 = wage/100)
+```
+
+-   `mutate` creates or modifies variables.
+
+```{r}
+reg2 <- feols(wage_100 ~ educ, data = wage1, vcov = "hetero")
+modelsummary(list("Wage" = reg1, "Wage in hundreds of $" = reg2), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+On average, an additional year of education is associated with an increase in the hourly wage of 0.005 hundreds of dollars. This is 0.005 $\times$ 100 $\approx$ 0.5 dollars, or 0.541 without rounding.
+
+
+---
+
+**Monthly wage:** Suppose workers are full-time employees who work 7 hours per day, 5 days per week, and 4 weeks per month. That is, 7 $\times$ 5 $\times$ 4 = 140.
+
+Create a new variable, wage_monthly = $wage$ $\times$ 140.
+
+```{r}
+wage1 <- wage1 %>%
+  mutate(wage_monthly = wage*140)
+```
+
+New regression:
+
+```{r}
+reg3 <- feols(wage_monthly ~ educ, data = wage1, vcov = "hetero")
+reg3
+```
+
+Compare the two regressions:
+
+```{r}
+modelsummary(
+  list("Hourly Wage" = reg1, "Monthly Wage" = reg3), gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+The coefficients of the second model equal those of the first model $\times$ 140. The same applies to the standard errors.
+
+On average, an additional year of education is **associated** with an increase in the monthly wage of 75.79 dollars.
+
+75.79 dollars = 0.541 $\times$ 140.
+
+### Independent Variable: educ
+
+Suppose $educ$ is measured in months of education. That is, $educ$ $\times$ 12:
+
+```{r}
+wage1 <- wage1 %>%
+  mutate(educ_mesi = educ*12)
+```
+
+```{r}
+reg4 <- feols(wage ~ educ_mesi, data = wage1, vcov = "hetero")
+modelsummary(list("Wage" = reg1, "Wage" = reg4), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+In this case, the intercept **does not** change. The intercept is -0.90 and represents the estimated average hourly wage, in dollars, for a person with zero months of education.
+
+On average, an additional month of education is **associated** with an increase in the hourly wage of 0.045 dollars, where $0.045 = \frac{0.541}{12}$.
+
+
+::: {.callout-important title="Goodness of Fit and Units of Measurement"}
+
+Changing the unit of measurement, whether for the dependent variable or the independent variable, does not change the goodness of fit of the model to the data. The $R^2$ remains unchanged, as does the statistical significance of the coefficients, because the ratio between the coefficient and the standard error remains the same.
+
+**Warning (1)** This will change when we consider models with the dependent variable in logarithmic form. In that case, as we will see, if we compare two models, one where the dependent variable is $wage$ and one where it is $log(wage)$, we are comparing two different models (lin-lin versus log-lin).
+
+**Warning (2)** Pay attention to changes in units of measurement when the dependent variable is expressed in logarithmic form, as we will see later.
+
+:::
+
+
+
+
+## Confidence Intervals and Hypothesis Tests
+
+Consider the first regression:
+
+```{r}
+modelsummary(list("Hourly Wage" = reg1), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+The 95% confidence interval for $\beta_1$ is computed as:
+
+$$
+\beta_1 \pm z_{1-\alpha/2} \times SE(\beta_1)
+$$ {#eq-ci}
+
+where $z_{1-\alpha/2}$ is the critical value of the standard normal distribution. For $\alpha = 0.05$, we have $z_{0.975} = 1.96$.
+
+Substituting the values of the coefficient and the standard error:
+$$
+\beta_1 \pm 1.96 \times SE(\beta_1) \implies 0.541 \pm 1.96 \times 0.061 \implies
+0.541 \pm 0.119
+$$
+
+With 95% confidence, we can state that the true value of the coefficient $\beta_1$ lies between 0.422 and 0.66 dollars.
+
+Using `feols()` and `confint`:
+
+```{r}
+confint(reg1)
+```
+
+
+Null and alternative hypotheses:
+
+$$
+  H_0: \beta_1 = 0 \quad \text{(no association between wage and educ)}
+$$
+
+$$
+  H_1: \beta_1 \neq 0 \quad \text{(there is an association between wage and educ)}
+$$
+
+To construct the test, begin by computing the $z$ statistic:
+
+$$
+   z = \frac{\beta_1}{SE(\beta_1)} = \frac{0.541}{0.061} = 8.87
+$$ 
+
+Then compare the critical value $z_{0.975} = 1.96$ with the absolute value of $z$. We can reject the null hypothesis if $|z|$ is greater than 1.96. Conversely, if $|z|$ is less than 1.96, we cannot reject the null hypothesis.
+
+In our case:
+$$
+  |z| = 8.87 > 1.96
+$$ 
+
+therefore, we reject the null hypothesis $H_0$ at the 5% significance level. Consequently, we can state that the coefficient $\beta_1$ is *statistically significant* at the 5% level, meaning that we have statistical evidence to conclude that there is an association between $educ$ and $wage$.
+
+
+The confidence interval for 2 additional years of education would be:
+
+$$
+2 \times 0.541 \pm 1.96 \times 2 \times 0.061 \implies
+1.082 \pm 0.238
+$$
+
+
+This is equivalent to multiplying the endpoints of the confidence interval for one year of education by 2.
+
+---
+
+## Confidence Intervals and Changes in Units of Measurement
+
+We have just seen that:
+
+$$
+\beta_1 \pm 1.96 \times SE(\beta_1) \implies 0.541 \pm 1.96 \times 0.061 \implies
+0.541 \pm 0.119
+$$
+
+If $wage$ were expressed in hundreds of dollars, the confidence interval for $\beta_1$ would be:
+
+$$
+\frac{0.541}{100} \pm 1.96 \times \frac{0.061}{100} \implies 0,00541 \pm 1.96 \times 0.00061 \implies 0.00541 \pm 0.00119
+$$
+
+This is equivalent to dividing by 100 the endpoints of the confidence interval expressed in dollars.
+
+---
+
+## Dummy Variables
+
+*Dummy variables* are a necessary tool for incorporating categorical information into regression models.
+
+Consider a categorical variable, `female`, which indicates the worker's gender. The variable can take only two values, `Female` and `Male`. The dummy variable is equal to:
+
+```{r}
+tabledummy <- table(wage1$female)
+names(tabledummy) <- c("Male", "Female")
+
+as.data.frame(tabledummy) |>
+  setNames(c("Gender", "Frequency")) |>
+  tt(caption = "Number of Men and Women")
+```
+
+Descriptive statistics by category:
+
+```{r}
+stat_gender <- wage1 %>% 
+  group_by(female) %>%
+        summarize(
+       wage_mean = mean(wage, na.rm = TRUE),
+       wage_median = median(wage, na.rm = TRUE),
+       wage_sd = sd(wage, na.rm = TRUE),
+       education_years_mean = mean(educ, na.rm = TRUE),
+       education_years_median = median(educ, na.rm = TRUE)
+  )
+
+stat_gender |>
+  tt(caption = "Descriptive statistics") |>
+  format_tt(digits = 2) |>
+  theme_tt("striped")
+```
+
+-   `group_by` groups the data by categories.
+
+
+::: {.callout-note title="Remember"}
+The mean of a dummy variable is equal to the proportion
+of observations for which $D_i = 1$ in the sample:
+
+$$\bar{D} = \frac{1}{n}\sum_{i=1}^{n} D_i = \frac{n_1}{n}$$
+
+where $n_1$ is the number of observations with $D_i = 1$.
+
+Indeed:
+```{r}
+mean(wage1$female)
+```
+
+That is, 252/526 $\approx$ 0.48.
+:::
+
+When we include this dummy variable in a regression model,
+
+$$
+wage_i = \beta_0 + \beta_1 female_i + u_i,
+$$
+
+we must think carefully about the interpretation of $\beta_0$ and $\beta_1$.
+
+
+### With Exogeneity: Causal Interpretation
+
+
+If we assume that $E(u_i|female_i)=0$, we can give the regression coefficients a causal interpretation. In this case, $\beta_0$ represents the expected wage when $female_i=0$, that is, for male workers:
+
+$$
+  E(wage_i|female_i=0)=\beta_0.
+$$ 
+
+Similarly, for female workers ($female_i=1$), the expected wage is:
+
+$$
+E(wage_i|female_i=1)=\beta_0+\beta_1.
+$$
+
+Consequently, $\beta_1$ represents the difference in expected wage between women and men:
+
+$$ 
+\beta_1 = E(wage_i|female_i=1) - E(wage_i|female_i=0).
+$$
+
+The assumption $E(u_i|female_i)=0$ implies that all variables that determine wages and are included in the error term do not differ systematically between men and women. In other words, we are assuming that the only difference between the groups is gender itself, and therefore the estimate of $\beta_1$ captures the causal effect of being a woman on earnings.
+
+
+The assumption $E(u_i|female_i)=0$ is unrealistic.
+
+### Without Exogeneity: Descriptive Interpretation
+
+If we are not willing to assume that $E(u_i|female_i)=0$, the causal interpretation is no longer valid. In this case, we can interpret $\beta_1$ simply as the observed difference in average wages, without assigning a causal meaning to this difference.
+
+The coefficient captures not only possible direct effects of gender, but also the effects of all omitted variables that are correlated with gender and affect wage. These may include, for example, systematic differences in education levels, choice of field of study, with women underrepresented in higher-paying STEM fields, industry or occupation, hours worked, or willingness to relocate geographically.
+
+The coefficient $\beta_1$ therefore reflects a "raw" difference in earnings, combining multiple factors beyond the effect of gender. In fact, it is simply a **difference in means** of $wage$ between the two groups (7.10 - 4.59 $\approx$ 2.51 dollars).
+
+
+Estimate the model using `fixest`:
+
+```{r}
+reg_female <- feols(wage ~ female, data = wage1, vcov = "hetero")
+modelsummary(list("Wage" =reg_female), gof_omit = "AIC|BIC|RMSE|R2 Adj.", title = "The dependent variable is Wage")
+```
+
+
+The regression results show that the average wage of men, represented by the intercept, is approximately 7.1 dollars per hour in 1976 dollars.
+
+The coefficient on the dummy variable for female gender (`female`) is -2.51 dollars. Women earn approximately 2.51 dollars less than men on average. The average wage of women is approximately 4.58 dollars (7.1 - 2.51).
+
+However, remember that this difference cannot be interpreted causally without assuming that $E(u_i|female_i)=0$, an assumption that is difficult to defend because many variables, such as industry or occupation and type of education, may differ systematically between men and women and affect $wage$.
+
+```{r}
+stat_gender |>
+  tt(caption = "Descriptive statistics") |>
+  format_tt(digits = 2) |>
+  theme_tt("striped")
+```
+
+### Dummy $male = 1?$
+
+Generate a dummy variable equal to 1 if the worker is male and 0 if the worker is female. There are several ways to add it.
+
+```{r}
+wage1 <- wage1 %>%
+  mutate(male = ifelse(female == 1, 0, 1))
+```
+
+-  We create a new variable, `male`, equal to 1 if the individual is male and 0 if the individual is female.
+
+-  `ifelse(female == 1, 0, 1)` means that if $female$ = 1, then $male$ = 0; otherwise, $male$ = 1.
+
+-  Equivalently, $male$ can be created as follows:
+
+```{r}
+#| eval: false
+wage1 <- wage1 %>% 
+  mutate(male = 1 - female)
+```
+
+```{r}
+reg_male <- feols(wage ~ male, data = wage1, vcov = "hetero")
+modelsummary(list("Wage" = reg_female, "Wage" = reg_male), gof_omit = "AIC|BIC|RMSE|R2 Adj.", title = "Female = 1 (first column) vs Male = 1 (second column)")
+```
+
+The statistical properties of OLS remain the same as when $x_i$ is continuous.
+
+**Note**: If we included both $male$ and $female$, there would be perfect multicollinearity, so one variable would be removed automatically.
+
+Indeed, $male$ + $female$ = 1 for every observation. Including both variables together with the intercept generates perfect multicollinearity.
+
+```{r}
+reg2dummy <- feols(wage ~ male + female, data = wage1, vcov = "hetero")
+reg2dummy
+```

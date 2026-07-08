@@ -1,5 +1,5 @@
 ---
-title: "Ripasso modelli log"
+title: "Review of log models"
 author: "Andrea Recine"
 format: 
   html:
@@ -11,7 +11,7 @@ execute:
   message: false
 ---
 
-**Pacchetti necessari:**
+**Required packages:**
 
 ```{r}
 #| message: false
@@ -23,7 +23,7 @@ library(modelsummary)
 library(fixest)
 ```
 
-**Per i dati:**
+**For the data:**
 ```{r}
 #| warning: false
 library(wooldridge)
@@ -36,11 +36,11 @@ data("wage1", package = "wooldridge")
 
 ::: {.callout-note title="Specificazioni in log"}
 
-| Forma del modello       | Interpretazione                                                                 |
+| Forma del model       | Interpretazione                                                                 |
 |-------------------------|----------------------------------------------------------------------------------|
 | $\log(Y)$ ~ $X$         | Un'unità in più in $X$ determina una variazione di $100 \cdot \beta_1$\% in $Y$              |
-| $Y$ ~ $\log(X)$         | Un aumento dell'1\% in $X$ determina una variazione di $0{,}01 \cdot \beta_1$ in $Y$       |
-| $\log(Y)$ ~ $\log(X)$   | Un aumento dell'1\% in $X$ determina una variazione di $\beta_1$\% in $Y$                    |
+| $Y$ ~ $\log(X)$         | Un increase dell'1\% in $X$ determina una variazione di $0{,}01 \cdot \beta_1$ in $Y$       |
+| $\log(Y)$ ~ $\log(X)$   | Un increase dell'1\% in $X$ determina una variazione di $\beta_1$\% in $Y$                    |
 
 :::
 
@@ -55,33 +55,33 @@ modelsummary(list("Log Wage" = reg_logwage, "Wage" = reg_wagelog, "Log Wage" =re
 ```
 
 
-- **Primo modello:** (log-level): Ad ogni anno in più di istruzione è associato in media un aumento dell'8.3 % del salario orario.
+- **Primo model:** (log-level): Ad ogni anno in più di education è associato on average un increase dell'8.3 % del hourly wage.
 
-- **Secondo modello:** (level-log): Un aumento del 1% degli anni di istruzione è associato ad un aumento, in media, del salario orario di 0.053 dollari. In modo equivalente un aumento del 10% degli anni di istruzione è associato ad un aumento, in media, il salario orario di 0.53$ (10 $\cdot$ 0.053).
+- **Secondo model:** (level-log): Un increase del 1% degli years of education is associated withd un increase, on average, del hourly wage di 0.053 dollari. In modo equivalente un increase del 10% degli years of education is associated withd un increase, on average, il hourly wage di 0.53$ (10 $\cdot$ 0.053).
 
-- **Terzo modello:** (log-log): Un aumento dell' 1% degli anni di istruzione è associato ad un aumento, in media, del salario orario dello 0.825 %.
+- **Terzo model:** (log-log): Un increase dell' 1% degli years of education is associated withd un increase, on average, del hourly wage dello 0.825 %.
 
 La scelta della specificazione (forma funzionale) dev’essere guidata dal ragionamento – quale interpretazione ha più senso?
 
-I logaritmi sono spesso utilizzati quando la variabile è in dollari (ad esempio wage o income) o variabili come popolazione (in particolare quando c'è abbastanza variazione).
+I logarithms sono spesso utilizzati quando la variabile è in dollari (ad esempio wage o income) o variabili come popolazione (in particolare quando c'è abbastanza variazione).
 
 Sono meno usati per variabili misurate in anni o che sono già percentuali o proporzioni (ad esempio tasso di disoccupazione).
 
 
-::: {.callout-note title="Unità di misura della variabile dipendente"}
+::: {.callout-note title="Unità di misura della dependent variable"}
 
-Con le variabili espresse in log, il cambiamento di unità di misura è irrilevante. Provate ad esprimere in salario in centinaia di dollari creando $wage$/100 e fate la regressione su $educ$.
+Con le variabili espresse in log, il cambiamento di unità di misura è irrilevante. Provate ad esprimere in wage in centinaia di dollari creando $wage$/100 e fate la regressione su $educ$.
 Lo stesso vale se la $X$ e $Y$ sono entrambi in log.
-L'intercetta invece cambierà.
+L'intercept invece cambierà.
 :::
 
 
 
 ::: {.callout-note title="Intervalli di confidenza"}
 
-Calcolate l'intervallo di confidenza al 95% per il coefficiente di $educ$ nella regressione Log Wage?
+Calcolate l'intervallo di confidenza al 95% per il coefficient di $educ$ nella regressione Log Wage?
 
-Intervallo di confidenza relativo a 10 anni aggiuntivi di istruzione? Gli estremi superiori e inferiori saranno pari quello precedente per 10. Provate.
+Intervallo di confidenza relativo a 10 anni aggiuntivi di education? Gli estremi superiori e inferiori saranno pari quello precedente per 10. Provate.
 :::
 
 
@@ -94,14 +94,14 @@ reg_logwagelog100 <- feols(log(wage/100) ~ log(educ), data = wage1, vcov = "hete
 modelsummary(list("Log Wage" = reg_logwage100, "Wage" = reg_wagelog100, "Log Wage" =reg_logwagelog100), output = "markdown", gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 ```
 
-- Nel primo modello cambia l'intercetta
-- Nel secondo modello un aumento del 1% degli anni di istruzione aumenta $wage$ di (0.053/100) centinaia di dollari
-- Nel terzo modello cambia solo l'intercetta
+- Nel primo model cambia l'intercept
+- Nel secondo model un increase del 1% degli years of education aumenta $wage$ di (0.053/100) centinaia di dollari
+- Nel terzo model cambia solo l'intercept
 
 
 **Cambiamento in $educ$:**
 
-Esprimiamo gli anni di istruzioni in mesi di istruzione:
+Esprimiamo gli anni di istruzioni in mesi di education:
 
 
 ```{r}
@@ -118,9 +118,9 @@ modelsummary(list("Log Wage" = reg_logwage12, "Wage" = reg_wagelog12, "Log Wage"
 
 Cosa è cambiato?
 
-- Un mese aggiuntivo di istruzione è associato ad un aumento del salario orario di circa il 0.7 %
-- Un aumento del'1% dei mesi di istruzione è associato ad un aumento del salario orario di 5.330/100 dollari
-- Un aumento del 1% dei mesi di istruzione è associato ad un aumento del salario dello 0.825%
+- Un mese aggiuntivo di education is associated withd un increase del hourly wage di circa il 0.7 %
+- Un increase del'1% dei mesi di education is associated withd un increase del hourly wage di 5.330/100 dollari
+- Un increase del 1% dei mesi di education is associated withd un increase del wage dello 0.825%
 
 
 ## Con altre variabili:
@@ -149,7 +149,7 @@ modelsummary(list("Log Wage" = reg_logwage100_mul, "Wage" = reg_wagelog100_mul, 
 
 **Cambiamento in $educ$:**
 
-Esprimiamo gli anni di istruzioni in mesi di istruzione:
+Esprimiamo gli anni di istruzioni in mesi di education:
 
 
 ```{r}

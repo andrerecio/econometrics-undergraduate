@@ -1,9 +1,9 @@
 ---
-title: "Introduzione a R"
+title: "Introduction a R"
 subtitle: "Regressione 📉"
 author: "Econometria"
 date: today
-lang: it
+lang: en
 
 format:
   revealjs:
@@ -42,7 +42,7 @@ library(modelsummary)
 data("wage1", package = "wooldridge")
 ```
 
-## Librerie e dati
+## Libraries and data
 
 ```{r}
 #| eval: false
@@ -55,12 +55,12 @@ data("wage1", package = "wooldridge")
 ```
 
 - `wooldridge` — libreria con dataset
-- `fixest` — regressione lineare con errori standard robusti
+- `fixest` — regressione linear con standard errors robusti
 - `modelsummary` — tabelle di regressione
 
 ---
 
-## 🗂️ Struttura dei dati
+## 🗂️ Data structure
 
 ```{r}
 head(wage1)
@@ -69,7 +69,7 @@ head(wage1)
 Variabili che useremo:
 
 - `wage` — retribuzione oraria media (dollari, 1976)
-- `educ` — anni di istruzione
+- `educ` — years of education
 
 
 ---
@@ -90,24 +90,24 @@ wage1 |>
 
 ---
 
-## 📊 Visualizzazione dei dati
+## 📊 Data visualization
 ```{r}
 #| layout-ncol: 2
 #| fig-width: 6
 #| fig-height: 4
 
-# Distribuzione del salario orario
+# Distribuzione del hourly wage
 ggplot(wage1, aes(x = wage)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 20) +
-  labs(title = "Distribuzione del salario orario",
+  labs(title = "Distribuzione del hourly wage",
         x = "Salario orario (dollari)", y = "Frequenza") +
   theme_minimal(base_size = 13)
 
-# Distribuzione degli anni di istruzione
+# Distribuzione degli years of education
 ggplot(wage1, aes(x = educ)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 20) +
-  labs(title = "Distribuzione degli anni di istruzione", 
-       x = "Anni di istruzione", y = "Frequenza") +
+  labs(title = "Distribuzione degli years of education", 
+       x = "Anni di education", y = "Frequenza") +
   theme_minimal(base_size = 13)
 ```
 
@@ -116,14 +116,14 @@ ggplot(wage1, aes(x = educ)) +
 
 ## 🔍 Relazione tra wage ed educ
 
-- `method = "lm"` — aggiunge una linea di regressione lineare
+- `method = "lm"` — aggiunge una linea di regressione linear
 
 ```{r}
 #| output-location: slide
 ggplot(wage1, aes(y = wage, x = educ)) + 
   geom_point(color = "black", alpha = 0.4) + 
   geom_smooth(method = "lm", color = "blue", se = FALSE) +
-  labs(x = "Anni di istruzione", 
+  labs(x = "Anni di education", 
        y = "Salario orario (dollari)") +
   theme_minimal(base_size = 13)
 ```  
@@ -133,9 +133,9 @@ ggplot(wage1, aes(y = wage, x = educ)) +
 ---
 
 
-## 📉 Regressione — modello lineare semplice
+## 📉 Regressione — model linear semplice
 
-Stimiamo il modello di regressione lineare semplice:
+Stimiamo il model di simple linear regression:
 
 $$wage_i = \beta_0 + \beta_1 \, educ_i + u_i$$
 
@@ -145,7 +145,7 @@ reg1 <- feols(wage ~ educ, data = wage1, vcov = "hetero")
 reg1
 ```
 
-- `vcov = "hetero"` o `vcov = "hc1"` — errori standard robusti
+- `vcov = "hetero"` o `vcov = "hc1"` — standard errors robusti
 - comando Stata: `regress wage educ, robust`
 
 
@@ -153,7 +153,7 @@ reg1
 
 ## 📉 Regressione — comando `lm` di R
 
-- il comando base per la regressione lineare è `lm()`, ma non fornisce errori standard robusti (serve `vcovHC()` del pacchetto `sandwich`)
+- il comando base per la regressione linear è `lm()`, ma non fornisce standard errors robusti (serve `vcovHC()` del pacchetto `sandwich`)
 
 ```{r}
 reg_lm <- lm(wage ~ educ, data = wage1)
@@ -162,10 +162,10 @@ summary(reg_lm)
 
 ---
 
-## 📋 Tabella della regressione
+## 📋 Table della regressione
 
-- variabile dipendente: `wage`
-- errori standard robusti in parentesi
+- dependent variable: `wage`
+- standard errors robusti in parentesi
 
 ::: {style="font-size: 0.85em"}
 ```{r}
@@ -178,11 +178,11 @@ modelsummary(list("wage" = reg1),gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
 
-## 📋 Tabella della regressione
+## 📋 Table della regressione
 
-Il coefficiente di $educ$ rappresenta l’incremento medio del salario orario associato ad un anno in più di istruzione:
+Il coefficient di $educ$ rappresenta l’incremento medio del hourly wage associato ad an additional year di education:
 
-- Un anno aggiuntivo di istruzione è **associato** a un aumento medio del salario orario di circa 0.54 dollari
+- An additional year di education è **associato** a un increase medio del hourly wage di circa 0.54 dollari
 
 
-L'intercetta ($\beta_0$) rappresenta il salario orario medio predetto per un individuo con zero anni di istruzione
+L'intercept ($\beta_0$) rappresenta il hourly wage medio predetto per un individuo con zero years of education

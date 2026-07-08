@@ -1,9 +1,9 @@
 ---
-title: "Homework 1"
+title: "Problem Set 1"
 subtitle: "Current Population Survey (CPS) 2024"
 author: "Andrea Recine"
 date: today
-lang: it
+lang: en
 
 format:
   html:
@@ -11,11 +11,11 @@ format:
     theme: flatly
     toc: true
     toc-depth: 3
-    toc-title: "Contenuti"
+    toc-title: "Contents"
     toc-location: right       
     number-sections: true
     
-    # Codice
+    # Code
     code-fold: false
     code-tools: true
     code-copy: true
@@ -26,7 +26,7 @@ format:
     # Output
     embed-resources: true
     
-    # Tipografia
+    # Typography
     fontsize: 1.1em
     linestretch: 1.6
 
@@ -44,13 +44,13 @@ knitr:
 
 ---
 
-## Introduzione
+## Introduction
 
 ### Dati
 
-I dati utilizzati in questa esercitazione provengono dal **Current Population  Survey Annual Social and Economic Supplement (CPS-ASEC)** per l'anno 2024, estratti tramite IPUMS CPS [Flood et al., 2025]. Il campione utilizzato è una sottoselezione di 2000 osservazioni di lavoratori in età lavorativa (16-65 anni) con redditi da lavoro positivi.
+I data utilizzati in questa tutorial come froml **Current Population  Survey Annual Social and Economic Supplement (CPS-ASEC)** per l'anno 2024, estratti tramite IPUMS CPS [Flood et al., 2025]. Il sample utilizzato è una sottoselezione di 2000 observations di lavoratori in età lavorativa (16-65 anni) con redditi da lavoro positivi.
 
-I microdati IPUMS sono soggetti a licenza d'uso e non vengono ridistribuiti. Studenti interessati a replicare le analisi possono registrarsi gratuitamente su <https://cps.ipums.org/> e scaricare un estratto analogo.
+I microdata IPUMS sono soggetti a licenza d'uso e non vengono ridistribuiti. Studenti interessati a replicare le analisi possono registrarsi gratuitamente su <https://cps.ipums.org/> e scaricare un estratto analogo.
 
 **Citazione completa**:
 
@@ -87,7 +87,7 @@ data("wage1", package = "wooldridge")
 
 ## Esercizio 2
 
-Consideriamo i dati in `wage2`
+Consideriamo i data in `wage2`
 
 ```{r}
 data("wage2", package = "wooldridge")
@@ -96,7 +96,7 @@ data("wage2", package = "wooldridge")
 
 - $wage$ sono le retribuzioni mensili
 - $educ$ sono gli anni di istruzioni
-- $exper$ anni di esperienza
+- $exper$ anni di experience
 
 Stimiamo le seguente regressioni:
 
@@ -108,10 +108,10 @@ modelsummary(list("Wage" = reg_wage1, "Log Wage" = reg_logwage1), gof_omit = "AI
 ```
 
 
-::: {.callout-note title="Domande"}
-1. Come si interpretano i coefficienti di $educ$ nelle due regressioni?
-2. I coefficienti sono statisticamente significativi al 5%? (Calcolare anche l'intervallo di confidenza al 95%)
-3. Wald test (statistica F robusta all'eteroschedasticità) che tutti i coefficienti della regressione siano uguali a zero
+::: {.callout-note title="Questions"}
+1. Come si interpretano i coefficients di $educ$ nelle due regressioni?
+2. I coefficients sono statisticamente significativi al 5%? (Calcolare anche l'intervallo di confidenza al 95%)
+3. Wald test (statistica F robusta all'heteroskedasticity) che tutti i coefficients della regressione siano uguali a zero
 :::
 
 
@@ -120,7 +120,7 @@ modelsummary(list("Wage" = reg_wage1, "Log Wage" = reg_logwage1), gof_omit = "AI
 
 ### Istruzione dei genitori: dataset `wage2`
 
-Usiamo il dataset `wage2` considerando $pareduc$ che rappresenta la somma degli anni di istruzione dei genitori. $wage$ in `wage2` è il salario espresso in dollari mensili:
+Usiamo il dataset `wage2` considerando $pareduc$ che rappresenta la somma degli years of education dei genitori. $wage$ in `wage2` è il wage espresso in dollari mensili:
 
 ```{r}
 wage2 <- wage2 %>%
@@ -171,7 +171,7 @@ modelsummary(list("Wage " = regeduc_int, "Wage " = regeduc_int_mean), gof_omit =
 
 **Riferimenti**
 
-**Fonte dei dati**: I dati utilizzati provengono dal CPS ASEC 2024, 
+**Fonte dei data**: I data utilizzati come froml CPS ASEC 2024, 
 estratti tramite IPUMS CPS:
 
 Flood, S., King, M., Rodgers, R., Ruggles, S., Warren, J. R., Backman, D., 
@@ -179,7 +179,7 @@ Breton, E., Cooper, G., Rivera Drew, J. A., Richards, S., Van Riper, D.,
 & Williams, K. C. W. (2025). *IPUMS CPS: Version 13.0* [dataset]. 
 IPUMS. <https://doi.org/10.18128/D030.V13.0>
 
-I microdati non vengono ridistribuiti ai sensi della licenza IPUMS. 
+I microdata non vengono ridistribuiti ai sensi della licenza IPUMS. 
 Per replicare le analisi, registrarsi su <https://cps.ipums.org/>.
 
 

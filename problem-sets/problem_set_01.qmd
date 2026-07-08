@@ -1,0 +1,644 @@
+---
+title: "Problem Set 1"
+subtitle: "Questions"
+author: "Andrea Recine"
+date: today
+lang: en
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    toc-location: right       
+    number-sections: true
+    
+    # Code
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+    
+    # Output
+    embed-resources: true
+    
+    # Typography
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+# Problem Set 1
+
+
+**Librerie da caricare**:
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(tinytable)
+library(modelsummary)
+library(fixest)
+library(car)
+library(marginaleffects)
+```
+
+
+```{r}
+#| warning: false
+library(wooldridge)
+```
+
+
+
+## Esercizio 1
+
+Consideriamo i data in `wage2`
+
+```{r}
+data("wage2", package = "wooldridge")
+```
+
+
+- $wage$ sono le retribuzioni mensili
+- $educ$ sono gli anni di istruzioni
+- $exper$ anni di experience
+- $tenure$ anni di permanenza presso l'attuale datore di lavoro
+- $black$ è una dummy variable che indica se il lavoratore è di colore
+
+
+
+Vengono estimateti i seguenti models:
+
+```{r}
+modelA <- feols(wage ~ educ + exper + tenure + black, data = wage2, vcov = "hetero")
+```
+
+
+```{r}
+modelB <- feols(log(wage) ~ educ + exper + tenure + black, data = wage2, vcov = "hetero")
+```
+
+
+
+```{r}
+modelsummary(list("Wage (Modello A)" = modelA, "Log Wage (Modello B)" = modelB), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+### Questions
+
+::: {.callout-tip title="Domanda 1 — Interpretazione di `educ`"}
+Interpretate il coefficient di $educ$ nel **Modello A** (livello) e nel **Modello B** (log).
+:::
+
+
+
+::: {.callout-tip title="Domanda 2 — Cambio di unità di misura"}
+Assumendo che il wage $wage$ nel **Modello A** sia espresso in centinaia di dollari (cioè `wage/100`). Quale delle seguenti affermazioni è corline?
+
+a) I coefficients del model A sarebbero tutti divisi per 100, mentre quelli del model B resterebbero invariati.
+
+b) I coefficients del model A sarebbero tutti divisi per 100, mentre quelli del model B, tranne l'intercept, resterebbero invariati.
+
+c) I coefficients del model A sarebbero tutti moltiplicati per 100, mentre quelli del model B, tranne quello di `educ`, resterebbero invariati.
+
+d) I coefficients del model A sarebbero tutti moltiplicati per 100, mentre quelli del model B resterebbero invariati.
+
+:::
+
+
+
+
+::: {.callout-tip title="Domanda 3 — Coefficiente di `black` (multiple choice)"}
+Quale interpretazione è corline per il coefficient di $black$?
+
+a) Nel Modello A: i lavoratori neri guadagnano on average circa 175.13 dollari in meno al mese, a parità delle altre variabili.
+b) Nel Modello B: i lavoratori neri guadagnano on average circa il 20.7% in meno, a parità delle stesse variabili.
+c) Entrambe le precedenti, una per ciascun model.
+:::
+
+
+
+::: {.callout-tip title="Domanda 4 — IC al 95% (calcolo)"}
+Costruite l'intervallo di confidenza al 95% per il coefficient di $educ$ nel **Modello B**.
+
+:::
+
+
+
+::: {.callout-tip title="Domanda 5 — IC al 90%"}
+Costruite l'intervallo di confidenza al 90% per il coefficient di un increase di 20 anni di $educ$ nel **Modello A**.
+:::
+
+
+
+
+::: {.callout-tip title="Domanda 6 — Test F di significatività congiunta"}
+Testate l'null hypothesis congiunta $H_0: \beta_{exper} = 0 \;\text{e}\; \beta_{tenure} = 0$ nel **Modello B**. Possiamo **rifiutare/non rifiutare** $H_0$ al 5%?
+:::
+
+```{r}
+#| code-fold: true
+linearHypothesis(modelB, c("exper = 0", "tenure = 0"))
+```
+
+
+## Esercizio 2
+
+
+Usiamo il dataset `wage1` (Wooldridge), un sample di lavoratori statunitensi dell'indagine CPS del 1976. Warning: in questa sezione l'**experience è misurata in decenni** (`exper_dec = exper / 10`).
+
+```{r}
+data("wage1", package = "wooldridge")
+
+wage1 <- wage1 |>
+  mutate(exper_dec  = exper / 10,   # experience in decenni
+         exper_dec2 = exper_dec^2)  # experience (in decenni) al quadrato
+```
+
+| variabile   | descrizione |
+|-------------|-------------|
+| `wage`      | hourly wage in dollari |
+| `educ`      | years of education completati |
+| `exper_dec` | decenni di experience lavorativa |
+| `tenure`    | anni con l'attuale datore di lavoro |
+| `female`    | =1 se woman, =0 se man |
+| `married`   | =1 se sposato/a, =0 altrimenti |
+| `nonwhite`  | =1 se non bianco/a, =0 altrimenti |
+
+I ricercatori estimateno sei specificazioni:
+
+```{r}
+mA <- feols(wage      ~ educ + exper_dec + tenure + female,
+            data = wage1, vcov = "hetero")                                   # A: linear
+
+mB <- feols(log(wage) ~ educ + exper_dec + tenure + female,
+            data = wage1, vcov = "hetero")                                   # B: log-linear
+
+mC <- feols(log(wage) ~ log(educ) + exper_dec + tenure + female,
+            data = wage1, vcov = "hetero")                                   # C: log-log
+
+mD <- feols(log(wage) ~ educ + exper_dec + female:exper_dec + tenure + female,
+            data = wage1, vcov = "hetero")                                   # D: interaction
+
+mE <- feols(log(wage) ~ educ + exper_dec + exper_dec2 + tenure + female,
+            data = wage1, vcov = "hetero")                                   # E: polynomialso
+
+mF <- feols(log(wage) ~ educ + educ:female + exper_dec + exper_dec2 + tenure + female,
+            data = wage1, vcov = "hetero")                                   # F: interaction + polynomialso
+
+modelsummary(list("(A)" = mA, "(B)" = mB, "(C)" = mC,
+                  "(D)" = mD, "(E)" = mE, "(F)" = mF),
+             gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+Tutti i models riportano standard errors robusti all'heteroskedasticity.
+
+### Questions
+
+::: {.callout-tip title="Domanda 1 — Modelli A e B"}
+Nel **Modello A**, an additional year di education is associated with un increase del hourly wage di circa **__________** *(dollari / %)*.
+
+Nel **Modello B**, an additional year di education is associated with un increase del hourly wage di circa **__________** *(dollari / %)*.
+:::
+
+
+
+::: {.callout-tip title="Domanda 2 — Cambio di unità di misura"}
+Se riestimatessimo i models esprimendo il wage in **decine di dollari** (`wage/10`) invece che in dollari, indicate **tutte** le affermazioni corrette:
+
+1. Gli $R^2$ sarebbero diversi.
+2. Nel Modello A gli standard errors verrebbero moltiplicati per 10.
+3. L'inferenza statistica (la significatività dei coefficients) rimarrebbe invariata.
+4. Nel model log-linear cambierebbe l'intercept, ma non i coefficients delle esplicative.
+5. Riscalare la dependent variable per una costante positiva non cambia i coefficients delle esplicative nel model log-linear.
+6. I coefficients verrebbero tutti moltiplicati per 10.
+
+Inoltre, nel **Modello A** il coefficient dell'education verrebbe moltiplicato per **__________**.
+:::
+
+::: {.callout-tip title="Domanda 3 — Modello D (interaction)"}
+Nel **Modello D**, l'effetto di un decennio aggiuntivo di experience (`exper_dec`) per una **woman** è un increase di circa **__________** %.
+
+Indicate **tutte** le affermazioni corrette sull'interaction `female:exper_dec` ($female \times exper\_dec$):
+
+1. Il rendimento dell'experience sul wage è diverso tra men e women.
+2. Il coefficient di `female:exper_dec` indica di quanto il rendimento dell'experience delle women differisce da quello degli men.
+3. La trasformazione logarithmsca cattura comunque qualunque non linearità, quindi l'interaction è superflua.
+4. Per un man (`female = 0`), un decennio in più di experience is associated with una variazione pari al coefficient di `exper_dec`.
+5. Il rendimento dell'experience è identico per men e women.
+:::
+
+::: {.callout-tip title="Domanda 4 — Modello E (polynomialso)"}
+Nel **Modello E**, l'marginal effect dell'experience sul (log) wage per un lavoratore con **10 anni di experience**  è circa **__________** /%.
+
+
+Il valore degli anni di experience per cui l'marginal effect è nullo è pari a **__________** anni.
+
+In base al test $t$ sul coefficient di `exper_dec²`, al livello del 10% (**we reject / we do not reject**) **__________** l'null hypothesis che la relazione, holding constant altre condizioni, fra il wage e l'experience sia linear.
+:::
+
+::: {.callout-tip title="Domanda 5 — Confronto degli R²"}
+Confrontate l'$R^2$ del Modello A con quello del Modello B. Uno studente conclude che il Modello B si adatta meglio ai data perché ha un $R^2$ più alto. Quale affermazione è corline?
+
+a) Il confronto non è valido perché i due models hanno dependent variables diverse (`wage` vs `log(wage)`): gli $R^2$ misurano quote di varianza di grandezze diverse.
+b) Il confronto non è valido perché il Modello B ha più regressori.
+c) Il confronto è valido solo se i coefficients sono statisticamente significativi.
+d) Il confronto è valido: un $R^2$ più alto indica sempre un miglior adattamento.
+:::
+
+::: {.callout-tip title="Domanda 6 — Modello F (interaction + polynomialso)"}
+Nel **Modello F**, il rendimento percentuale di an additional year di education per gli **men** è circa **__________** %, mentre per le **women** è circa **__________** %.
+
+La differenza in valore assoluto tra i due rendimenti è circa **__________** punti percentuali.
+
+:::
+
+
+## Esercizio 3
+
+Consideriamo i data `hprice1` (88 case, Wooldridge), che contengono informazioni sui prezzi delle case e sulle loro caratteristiche.
+
+```{r}
+data("hprice1", package = "wooldridge")
+```
+
+- $price$: prezzo della casa in migliaia di dollari
+- $sqrft$: superficie in piedi quadrati
+- $lotsize$: dimensione del lotto (piedi quadrati)
+- $bdrms$: numero di camere da letto
+- $colonial$: dummy = 1 se la casa è in stile coloniale
+
+Stimiamo due models, uno **lin-lin** e uno **log-log**:
+
+```{r}
+model_lin <- feols(price ~ sqrft + lotsize + bdrms + colonial,
+                     data = hprice1, vcov = "hetero")
+
+model_log <- feols(log(price) ~ log(sqrft) + log(lotsize) + bdrms + colonial,
+                     data = hprice1, vcov = "hetero")
+
+modelsummary(list("Modello A" = model_lin, "Modello B" = model_log),
+             gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+### Questions
+
+::: {.callout-tip title="Domanda 1 — Elasticità"}
+Interpretate il coefficient di $\log(sqrft)$ nel model log-log. Perché viene chiamato **elasticità**?
+:::
+
+
+
+::: {.callout-tip title="Domanda 2 — Coefficiente di `bdrms` (multiple choice)"}
+Nel model log-log, il coefficient di $bdrms$ ($\hat\beta = 0.027$) si interpreta come:
+
+a) Elasticità di $price$ rispetto a $bdrms$.
+b) Variazione percentuale di $price$ per una camera da letto in più (semielasticità).
+c) Variazione in dollari di $price$ per una camera da letto in più.
+d) Variazione in migliaia di dollari di $price$ per una camera da letto in più.
+:::
+
+
+
+
+
+::: {.callout-tip title="Domanda 3 — Coefficiente di `colonial`"}
+Interpretate il coefficient di $colonial$ nel model **log-log**. Quanto vale, approssimativamente, la differenza percentuale di prezzo tra case coloniali e non coloniali? Nel model **lin-lin** invece, quanto vale la differenza e in che unità di misura?
+:::
+
+
+
+::: {.callout-tip title="Domanda 4 — Cambio di unità di misura (V/F)"}
+Se cambiassimo l'unità di misura di $price$ da migliaia di dollari ($\$1000$) a dollari ($\$1$), il coefficient di $\log(sqrft)$ resterebbe invariato. Vero o falso?
+:::
+
+
+
+## Esercizio 4
+
+Consideriamo i data `mlb1` (353 giocatori della Major League Baseball, Wooldridge), che contengono data su wages e statistiche di carriera.
+
+```{r}
+data("mlb1", package = "wooldridge")
+```
+
+- $salary$: wage annuale in dollari
+- $years$: anni di carriera in MLB
+- $bavg$: media battuta (battute valide per 1000 turni alla battuta)
+- $hrunsyr$: fuoricampo (home run) per anno
+- $rbisyr$: punti battuti a casa (RBI) per anno
+
+Stimiamo un model con $years$ in forma **quadratica**:
+
+$$\log(salary) = \beta_0 + \beta_1 \, years + \beta_2 \, years^2 + \beta_3 \, bavg + \beta_4 \, hrunsyr + u$$
+
+```{r}
+model_quad <- feols(log(salary) ~ years + I(years^2) + bavg + hrunsyr,
+                      data = mlb1, vcov = "hetero")
+
+modelsummary(list("Modello con years²" = model_quad),
+             gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+### Questions
+
+::: {.callout-tip title="Domanda 1 — Perché `years²`?"}
+Perché abbiamo aggiunto $years^2$ tra i regressori? Cosa misura il **segno** di $\hat\beta_2$ (positivo o negativo)?
+:::
+
+
+
+::: {.callout-tip title="Domanda 2 — Effetto marginale (calcolo)"}
+Calcolate l'marginal effect di $years$ per un giocatore con 5 anni di carriera e per un giocatore con 15 anni di carriera.
+:::
+
+
+
+
+
+
+::: {.callout-tip title="Domanda 3 — Se omettiamo `years²` (multiple choice)"}
+Se estimatessimo invece il model **senza** $years^2$, il coefficient $\hat\beta_1$ su $years$ rappresenterebbe:
+
+a) L'marginal effect corretto (uguale a quello del model quadratico).
+b) Un'approssimazione linear di una relazione che è in realtà non linear; il segno potrebbe essere fuorviante a seconda della distribuzione di $years$.
+c) Sempre zero per costruzione.
+d) La semielasticità a $years = 0$.
+:::
+
+
+
+::: {.callout-tip title="Domanda 4 — Coefficiente di `bavg`"}
+Una media battuta $bavg$ di 10 punti in più is associated with quanti punti percentuali di wage in più, holding constant $years$ e $hrunsyr$?
+:::
+
+
+
+## Esercizio 5
+
+Restiamo sui data `mlb1`, ora interessati a una possibile **interaction** tra $years$ e la dummy $nl$ (= 1 se il giocatore milita in National League, = 0 se in American League):
+
+$$\log(salary) = \beta_0 + \beta_1 \, years + \beta_2 \, nl + \beta_3 \, (years \cdot nl) + \beta_4 \, hrunsyr + u$$
+
+```{r}
+model_int <- feols(log(salary) ~ years + nl + years:nl + hrunsyr,
+                     data = mlb1, vcov = "hetero")
+
+modelsummary(list("Modello con interaction" = model_int),
+             gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+### Questions
+
+::: {.callout-tip title="Domanda 1 — Interpretazione di $\\hat\\beta_2$ e $\\hat\\beta_3$"}
+Come si interpretano il coefficient di $nl$ ($\hat\beta_2$) e il coefficient dell'interaction $years \times nl$ ($\hat\beta_3$)?
+:::
+
+
+
+::: {.callout-tip title="Domanda 2 — Effetto marginale di `years` per lega (calcolo)"}
+Qual è l'marginal effect di $years$ per giocatori in **AL** ($nl = 0$) e in **NL** ($nl = 1$). Quanto valgono numericamente?
+:::
+
+
+
+::: {.callout-tip title="Domanda 3 — Significatività dell'interaction (multiple choice)"}
+Il coefficient dell'interaction è statisticamente significativo al 5%? Cosa posso concludere?
+
+a) Il ritorno all'experience è zero.
+b) Il ritorno all'experience **non** differisce significativamente tra AL e NL.
+c) La variabile $nl$ non ha alcun effetto sul wage.
+d) Il model è mal specificato.
+:::
+
+
+
+::: {.callout-tip title="Domanda 4 — Centratura di `years`"}
+Centriamo $years$ sulla **media campionaria** ($\overline{years} \approx 6.33$) e ri-we estimate il model. Come cambia l'interpretazione del coefficient di di $nl$?
+:::
+
+```{r}
+mlb1 <- mlb1 |>
+  mutate(years_c = years - mean(years))
+
+model_int_c <- feols(log(salary) ~ years_c + nl + years_c:nl + hrunsyr,
+                       data = mlb1, vcov = "hetero")
+
+modelsummary(list("Originale" = model_int, "Centrato su years" = model_int_c),
+             gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+
+
+
+## Esercizio 6 — Variabile dipendente binaria (LPM vs Logit)
+
+La partecipazione delle women sposate al mercato del lavoro è un tema classico dell'economia del lavoro. Quando la dependent variable è binaria (la woman è nella forza lavoro: sì/no), dobbiamo scegliere tra diversi models econometrici.
+
+Usiamo il dataset `mroz` (Mroz, 1987), che contiene informazioni su 753 women sposate. Analizziamo i fattori associati alla probability di partecipare al mercato del lavoro.
+
+| variabile | descrizione |
+|-----------|-------------|
+| `inlf`     | =1 se la woman è nella forza lavoro (*in labor force*), =0 altrimenti |
+| `nwifeinc` | reddito familiare non guadagnato dalla woman (in migliaia di \$) |
+| `educ`     | years of education |
+| `exper`    | anni di experience lavorativa |
+| `expersq`  | experience al quadrato (`exper^2`) |
+| `age`      | età in anni |
+| `kidslt6`  | numero di figli di età inferiore a 6 anni |
+| `kidsge6`  | numero di figli di età tra 6 e 18 anni |
+
+Stimiamo due models:
+
+- **Modello A** — Linear Probability Model (LPM)
+- **Modello B** — model Logit
+
+```{r}
+data("mroz", package = "wooldridge")
+
+mA_lpm <- feols(inlf ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6,
+                vcov = "hetero", data = mroz)
+
+mB_logit <- feglm(inlf ~ nwifeinc + educ + exper + expersq + age + kidslt6 + kidsge6,
+                  family = binomial(link = "logit"), data = mroz)
+
+modelsummary(list("LPM" = mA_lpm, "Logit" = mB_logit), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+Gli **marginal effects medi** (AME) del model Logit sono:
+
+```{r}
+marginaleffects::avg_slopes(mB_logit)
+```
+
+
+::: {.callout-tip title="Domanda 1 — Interpretare il LPM"}
+Secondo il LPM (Modello A), avere **un figlio in più di età inferiore a 6 anni** (`kidslt6`) is associated with un (**decrease** / **increase**) di ______ punti percentuali nella probability di partecipare al mercato del lavoro, a parità delle altre variabili.
+:::
+
+
+
+::: {.callout-tip title="Domanda 2 — Coefficienti logit (V/F)"}
+Selezionate **tutte** le affermazioni corrette:
+
+1. I coefficients del logit rappresentano l'effetto sul *log(odds)*, non sulla probability.
+2. Nel logit, l'marginal effect di una variabile sulla probability dipende dal livello di **tutte** le variabili esplicative.
+3. Un modo per interpretarli in termini di probability è calcolare gli marginal effects medi (AME).
+4. I coefficients logit rappresentano dilinemente la variazione nella probability.
+5. I coefficients logit sono sempre maggiori (in valore assoluto) di quelli del LPM.
+6. In entrambi i models l'marginal effect è costante per tutti gli individui.
+7. I coefficients logit diventano probability se moltiplicati per 100.
+:::
+
+
+
+
+::: {.callout-tip title="Domanda 3 — Effetto marginale nel logit"}
+Secondo il Modello B (Logit), **4 anni in più di education** (`educ`) are associated with un (**decrease** / **increase**) di ______ punti percentuali nella probability di partecipare.
+:::
+
+
+
+
+::: {.callout-tip title="Domanda 4 — Intervallo di confidenza"}
+Sempre per l'effetto di **4 anni in più di education** nel logit, l'intervallo di confidenza al 95% (in punti percentuali) è circa ( ______ , ______ ).
+:::
+
+
+
+
+::: {.callout-tip title="Domanda 5 — Confronto LPM vs Logit"}
+Indicate **tutte** le affermazioni corrette:
+
+1. Nel LPM, **2 figli in più** di età < 6 anni are associated with una riduzione della probability di circa 52,36 punti percentuali.
+2. Nel logit (AME), **un figlio in più** di età < 6 anni is associated with una riduzione di circa 25,78 punti percentuali.
+3. Nel LPM, an additional year di education is associated with un increase di circa 3,80 punti percentuali.
+4. Gli effetti estimateti sulla probability sono identici nei due models.
+5. Il logit predice sempre effetti maggiori del LPM.
+6. L'education non ha un effetto statisticamente significativo in nessuno dei due models.
+:::
+
+
+
+::: {.callout-tip title="Domanda 6 — Differenza di probability predetta (LPM)"}
+Usando il LPM (Modello A), confrontate due women identiche per `nwifeinc` (=20), `exper` (=10), `age` (=40) e `kidsge6` (=1), ma diverse così:
+
+- **Donna A**: `educ` = 16, `kidslt6` = 0
+- **Donna B**: `educ` = 12, `kidslt6` = 2
+
+La differenza nella probability predetta di partecipazione (A − B) è di circa ______ punti percentuali.
+:::
+
+
+## Esercizio 7 — regression with panel data
+
+Le imprese che ricevono **sussidi alla formazione** (*job training grants*) migliorano davvero la produttività? Misuriamo la produttività con il *tasso di scarti* (`scrap`: pezzi difettosi per 100 prodotti); usiamo il suo logaritmo `lscrap`. 
+
+Il problema è l'**endogeneity** di `grant`: i sussidi non sono assegnati a caso, e le imprese con più problemi di qualità potrebbero avere maggiori probability di richiederli (o di ottenerli).
+
+
+Usiamo il dataset panel `jtrain`, che segue un sample di imprese manifatturiere del Michigan per 3 anni (1987–1989).
+
+| variabile | descrizione |
+|-----------|-------------|
+| `fcode`    | codice identificativo dell'impresa |
+| `year`     | anno dell'observation |
+| `lscrap`   | logaritmo del tasso di scarti (proxy inversa di produttività) |
+| `grant`    | =1 se l'impresa ha ricevuto il sussidio formativo nell'anno (tempo-variante) |
+| `lsales`   | log delle vendite |
+| `lemploy`  | log del numero di dipendenti |
+| `union`    | =1 se l'impresa ha manodopera sindacalizzata (time invariant) |
+
+- **Modello A (Pooled OLS)**: ignora la struttura panel
+- **Modello B (FE impresa)**: effetti fissi di impresa
+- **Modello C (FE impresa + anno)**: effetti fissi di impresa e di anno
+
+```{r}
+data("jtrain", package = "wooldridge")
+
+m_ols <- feols(lscrap ~ grant + lsales + lemploy + union,
+               vcov = "hetero", data = jtrain)
+
+m_fe  <- feols(lscrap ~ grant + lsales + lemploy + union | fcode,
+               vcov = "cluster", data = jtrain)
+
+m_fet <- feols(lscrap ~ grant + lsales + lemploy + union | fcode + year,
+               vcov = "cluster", data = jtrain)
+
+modelsummary(list("Pooled OLS (A)" = m_ols, "FE impresa (B)" = m_fe, "FE impresa+anno (C)" = m_fet), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+
+
+::: {.callout-tip title="Domanda 1 — Interpretare il Pooled OLS"}
+Secondo il Modello A (Pooled OLS), ricevere il sussidio nell'anno corrente (`grant`) is associated with un tasso di scarti più alto di circa ______ (**punti percentuali** / **dollari** / **%**).
+:::
+
+
+
+::: {.callout-tip title="Domanda 2 — Interpretare gli effetti fissi"}
+Secondo il Modello B (FE impresa), che controlla per tutte le caratteristiche fisse dell'impresa, ricevere il sussidio nell'anno corrente is associated with un tasso di scarti più (**basso** / **alto**) di circa ______ (**punti percentuali** / **dollari** / **%**).
+:::
+
+
+
+
+::: {.callout-tip title="Domanda 3 — Distorsione e variabili omesse"}
+Quali affermazioni sulla distorsione nella estimate dell'effetto del sussidio sono corrette? (selezione multipla)
+
+1. La differenza tra il coefficient OLS e quelli FE è troppo piccola per essere rilevante.
+2. Gli effetti fissi di impresa (B e C) correggono la distorsione da qualsiasi variabile omessa non osservata costante nel tempo per ciascuna impresa.
+3. L'introduction di effetti fissi temporali e di impresa corregge **ogni** tipo di endogeneity, inclusi causalità inversa ed errori di misura.
+4. Gli effetti fissi temporali (C) catturano shock comuni a tutte le imprese in un dato anno (es. una recessione).
+5. Gli effetti fissi non possono nulla contro variabili omesse che variano nel tempo a livello di singola impresa.
+:::
+
+
+::: {.callout-tip title="Domanda 4 — Quali coefficients sono estimatebili?"}
+Nel Modello B e C il coefficient di `union` non compare. Quali affermazioni sono corrette? (selezione multipla)
+
+1. Nei Modelli B e C, `union` non è estimatebile perché è **costante nel tempo** per ogni impresa: la sua variabilità è interamente assorbita dagli effetti fissi di impresa.
+2. `grant` è estimatebile nei models FE perché varia nel tempo all'interno della stessa impresa.
+3. `union` potrebbe essere estimateta nel Modello C se fosse statisticamente significativa.
+4. L'impossibilità di estimatere `union` è dovuta a un errore del software.
+5. Con effetti fissi di impresa, un regressore tempo-invariante è perfettamente collinear con gli effetti fissi.
+:::
+
+
+::: {.callout-tip title="Domanda 5 — Errori standard clusterizzati"}
+Nei Modelli B e C gli standard errors sono *clusterizzati* per impresa (`fcode`). Quali affermazioni sono corrette? (selezione multipla)
+
+1. La clusterizzazione serve perché le observations della stessa impresa in anni diversi non sono indipendenti (correlazione seriale negli errori).
+2. Usare standard errors troppo piccoli aumenta la probability di rifiutare erroneamente $H_0$ (errore di I tipo).
+3. Omettere la clusterizzazione, in presenza di correlazione seriale, tende a produrre standard errors sottoestimateti.
+4. La clusterizzazione corregge la distorsione dei coefficients dovuta a variabili omesse.
+5. Se un coefficient non è significativo, clusterizzare può renderlo significativo.
+:::
+
+

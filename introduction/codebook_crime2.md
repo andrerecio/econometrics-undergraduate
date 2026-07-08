@@ -4,14 +4,14 @@
 
 | Variabile  | Descrizione                              |
 |------------|------------------------------------------|
-| `name`     | Nome della città                         |
-| `city`     | ID della città                           |
-| `jid`      | Identificativo univoco della città       |
+| `name`     | City name                         |
+| `city`     | City ID                           |
+| `jid`      | Unique city identifier       |
 | `statenam` | Stato (abbreviazione a 2 lettere)        |
 | `state`    | Codice dello stato (2 cifre, non-FIPS)   |
 | `year`     | Anno (4 cifre)                           |
 
-## Criminalità (FBI UCR CUS)
+## Crime (FBI UCR CUS)
 
 | Variabile  | Descrizione                              |
 |------------|------------------------------------------|
@@ -30,7 +30,7 @@
 | `sworn`    | Numero di agenti giurati                 |
 | `civil`    | Numero di impiegati civili               |
 
-## Elezioni e variabili politiche
+## Elections and political variables
 
 | Variabile  | Descrizione                                          |
 |------------|------------------------------------------------------|
@@ -49,15 +49,15 @@
 
 | Variabile   | Descrizione                                                   |
 |-------------|---------------------------------------------------------------|
-| `citypop`   | Popolazione della città (FBI UCR, Arrests tape)               |
-| `citybla`   | Quota popolazione nera nella città (interpolata)              |
-| `cityfemh`  | Quota nuclei con capofamiglia donna nella città (interpolata) |
-| `a0_5`      | Quota popolazione SMSA di età 0–4                             |
-| `a5_9`      | Quota popolazione SMSA di età 5–9                             |
-| `a10_14`    | Quota popolazione SMSA di età 10–14                           |
-| `a15_19`    | Quota popolazione SMSA di età 15–19                           |
-| `a20_24`    | Quota popolazione SMSA di età 20–24                           |
-| `a25_29`    | Quota popolazione SMSA di età 25–29                           |
+| `citypop`   | City population (FBI UCR, Arrests tape)               |
+| `citybla`   | Share of Black population in the city (interpolata)              |
+| `cityfemh`  | Quota nuclei con capofamiglia woman nella città (interpolata) |
+| `a0_5`      | SMSA population share di età 0–4                             |
+| `a5_9`      | SMSA population share di età 5–9                             |
+| `a10_14`    | SMSA population share di età 10–14                           |
+| `a15_19`    | SMSA population share di età 15–19                           |
+| `a20_24`    | SMSA population share di età 20–24                           |
+| `a25_29`    | SMSA population share di età 25–29                           |
 
 ## Variabili economiche
 
@@ -72,9 +72,9 @@
 
 | Variabile   | Descrizione                                                    |
 |-------------|----------------------------------------------------------------|
-| `sta_educ`  | Spesa reale pro capite per istruzione (stato + enti locali)   |
+| `sta_educ`  | Spesa reale pro capite per education (stato + enti locali)   |
 | `sta_welf`  | Spesa reale pro capite per welfare (stato + enti locali)      |
 
 ---
 
-**Nota:** Le variabili `jid`, `mayor`, `date_wa`, `date_my` e `web` provengono da McCrary (2002). Le restanti da Levitt (1997).
+**Note:** The variables `jid`, `mayor`, `date_wa`, `date_my` e `web` come from McCrary (2002). The remaining variables da Levitt (1997).
