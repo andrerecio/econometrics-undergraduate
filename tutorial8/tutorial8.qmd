@@ -1,0 +1,546 @@
+---
+title: "Tutorial 8"
+subtitle: "Regression with Panel Data"
+author: "Andrea Recine"
+date: today
+lang: en
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    toc-location: right
+    number-sections: true
+
+    # Code
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+
+    # Output
+    embed-resources: true
+
+    # Typography
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+
+# Regression with Panel Data
+
+A panel dataset contains observations on multiple units (individuals, states, or firms), with each unit observed in two or more time periods.
+
+For example:
+
+- Data on 50 U.S. states, each observed for 3 years, for a total of 150 observations.
+- Data on 1,000 individuals observed in four different months, for a total of 4,000 observations.
+
+Panel data allow us to control for factors that:
+
+- Vary across units but not over time (for example, unobserved variables that differ across states but remain constant over time)
+- Vary over time but not across units
+- Could cause omitted-variable bias
+- Are unobserved or unmeasured and therefore cannot be included in a multiple regression
+
+
+**Key idea:** If an omitted variable does not vary over time, it cannot cause changes in $Y$ over time.
+
+This is precisely the logic of **individual fixed effects**: by absorbing everything that is constant over time for each unit, they eliminate bias due to time-invariant factors, whether observed or unobserved. Time-varying omitted factors remain. If these factors are common to all units, however, we can also control for them using **time fixed effects**.
+
+## Setup
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(modelsummary)
+library(fixest)
+library(wooldridge)
+```
+
+
+# Dataset `wagepan`
+
+```{r}
+data("wagepan", package = "wooldridge")
+datasummary_skim(wagepan)
+```
+
+The `wagepan` dataset contains wage data for 545 workers from 1980 to 1987 ($T=8$).
+
+We use the following variables:
+
+- $lwage$: log wage, $\log(wage)$
+- $union$: indicator equal to 1 if the worker is a union member
+- $exper$: years of labor-market experience
+- $expersq$: years of experience squared
+- $educ$: years of education
+- $black$: indicator equal to 1 if the worker is Black
+- $hisp$: indicator equal to 1 if the worker is Hispanic
+- $married$: indicator equal to 1 if the worker is married
+
+
+```{r}
+head(wagepan)
+```
+
+
+## Pooled OLS
+
+As a starting point, we estimate a model that ignores the panel structure.
+
+```{r}
+reg_pooled <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married,
+                    data = wagepan, vcov = "hetero")
+reg_pooled
+```
+
+
+::: {.callout-note title="Questions"}
+1. How should the coefficients on $educ$ and $union$ be interpreted?
+:::
+
+- Union membership is **associated** with an average wage that is approximately 18% higher, holding the other variables constant.
+
+- Each additional year of education is **associated** with an average wage that is approximately 9.9% higher, holding the other variables constant.
+
+
+
+# T=2: Individual Fixed Effects
+
+We begin with the simplest case: only two observation periods, 1980 and 1987. We construct a subsample containing these two years.
+
+```{r}
+wagepan_2periods <- wagepan %>% filter(year %in% c(1980, 1987))
+head(wagepan_2periods)
+```
+
+We want to estimate the effect of $union$ on $lwage$ (log wage), controlling for **individual fixed effects**, that is, worker characteristics that do not vary over time. With $T=2$, there are **three equivalent methods**:
+
+1. First differences (without an intercept)
+2. Within transformation (deviations from individual means)
+3. Individual indicators
+
+
+The `fixest` package implements the within transformation efficiently through `feols(... | nr, ...)` and applies the appropriate standard-error adjustment [(Bergé et al. 2026)](https://arxiv.org/pdf/2601.21749).
+
+
+## First Differences (Without an Intercept)
+
+We compute first differences, $\Delta y_i = y_{i,1987} - y_{i,1980}$, by grouping observations by individual (`group_by(nr)`) and sorting them by year.
+
+```{r}
+wagepan_2periods_fd <- wagepan_2periods %>%
+  arrange(nr, year) %>%
+  group_by(nr) %>%
+  mutate(
+    d_lwage   = lwage   - lag(lwage),
+    d_union   = union   - lag(union),
+    d_exper   = exper   - lag(exper),
+    d_expersq = expersq - lag(expersq),
+    d_educ    = educ    - lag(educ),
+    d_black   = black   - lag(black),
+    d_hisp    = hisp    - lag(hisp),
+    d_married = married - lag(married)
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(d_lwage))   # Remove each individual's 1980 observation
+```
+
+We estimate the regression **without an intercept** (using `-1`):
+
+```{r}
+reg_fd <- feols(d_lwage ~ -1 + d_union + d_exper + d_expersq + d_educ + d_black + d_hisp + d_married,
+                data = wagepan_2periods_fd, vcov = "hetero")
+reg_fd
+```
+
+The variables $educ$, $black$, and $hisp$ are constant over time for each individual: their first differences are zero, so they are removed because of collinearity. This is exactly the purpose of individual fixed effects: they absorb everything that does not vary over time.
+
+
+## Within Transformation (Deviations from Individual Means)
+
+Alternatively, we subtract each individual's mean from every variable (`group_by(nr)`):
+
+```{r}
+wagepan_2periods_dm <- wagepan_2periods %>%
+  group_by(nr) %>%
+  mutate(
+    lwage_dm   = lwage   - mean(lwage,   na.rm = TRUE),
+    union_dm   = union   - mean(union,   na.rm = TRUE),
+    exper_dm   = exper   - mean(exper,   na.rm = TRUE),
+    expersq_dm = expersq - mean(expersq, na.rm = TRUE),
+    educ_dm    = educ    - mean(educ,    na.rm = TRUE),
+    black_dm   = black   - mean(black,   na.rm = TRUE),
+    hisp_dm    = hisp    - mean(hisp,    na.rm = TRUE),
+    married_dm = married - mean(married, na.rm = TRUE)
+  ) %>%
+  ungroup()
+```
+
+```{r}
+reg_within <- feols(lwage_dm ~ union_dm + exper_dm + expersq_dm + educ_dm + black_dm + hisp_dm + married_dm,
+                    data = wagepan_2periods_dm, vcov = "hetero")
+reg_within
+```
+
+The intercept is zero because the demeaned variables have zero means. For completeness, we could add `-1` to the `feols` specification.
+
+
+## Individual Indicators
+
+We can also explicitly include an indicator for each individual using `as.factor(nr)`.
+
+```{r}
+reg_lsdv <- feols(lwage ~ as.factor(nr) + union + exper + expersq + educ + black + hisp + married,
+                  data = wagepan_2periods, vcov = "hetero")
+reg_lsdv
+```
+
+
+
+In this way, `feols` estimates **an indicator for each individual** (545 individuals: the intercept plus 544 indicators). The time-invariant variables $educ$, $black$, and $hisp$ are removed because of collinearity.
+
+
+The complete output would contain hundreds of rows, so we display only the variables of interest using `keep`.
+
+```{r}
+etable(reg_lsdv, keep = c("union", "exper", "expersq"), order = c("union", "exper", "expersq"), signif.code = NA)
+```
+
+
+
+The coefficient on $union$ is identical to those obtained using first differences and the within transformation.
+
+
+
+
+## `feols(... | nr, ...)`
+
+The `fixest` package uses the syntax `| nr`, where `nr` identifies the fixed-effects dimension:
+
+```{r}
+reg_fe_ind <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr,
+                    data = wagepan_2periods, vcov = "hetero")
+reg_fe_ind
+```
+
+
+::: {.callout-important title="Equivalence with T=2"}
+With $T=2$, the three approaches are **algebraically equivalent**: they produce the same coefficient on $union$ (≈ 0.077). A manually implemented within transformation requires an adjustment to the standard errors, whereas `feols(... | nr, ...)` applies it automatically. With $T>2$, the within estimator and the least-squares dummy-variable estimator remain equivalent, but the first-difference estimator does not.
+:::
+
+
+
+# T=2: Individual and Time Fixed Effects
+
+Still using the $T=2$ subsample, we now add time fixed effects. We therefore control jointly for:
+
+- Individual characteristics that do not vary over time (individual fixed effects);
+- Changes over time that are common to all individuals (time fixed effects).
+
+
+## First Differences with an Intercept
+
+Stock and Watson (p. 283) show that, when $T=2$, including an **intercept** in the first-difference regression is equivalent to including both individual **and** time fixed effects. The intercept captures the common average change between 1980 and 1987.
+
+```{r}
+reg_fd_int <- feols(d_lwage ~ d_union + d_exper + d_expersq + d_educ + d_black + d_hisp + d_married,
+                    data = wagepan_2periods_fd, vcov = "hetero")
+reg_fd_int
+```
+
+
+`d_exper` is removed because of collinearity: between 1980 and 1987, every individual gained exactly 7 years of experience, so $\Delta exper$ is a constant perfectly collinear with the intercept.
+
+
+## `feols(... | nr + year, ...)`
+
+```{r}
+reg_fe_indtime <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr + year,
+                        data = wagepan_2periods, vcov = "hetero")
+reg_fe_indtime
+```
+
+
+
+In the next section, we will see that this equivalence no longer holds when $T>2$.
+
+
+
+# T>2: Full Panel
+
+We now return to the full panel ($T=8$, 545 individuals, and 4,360 observations).
+
+
+## Within Transformation (Deviations from Individual Means)
+
+```{r}
+wagepan_dm <- wagepan %>%
+  group_by(nr) %>%
+  mutate(
+    lwage_dm   = lwage   - mean(lwage,   na.rm = TRUE),
+    union_dm   = union   - mean(union,   na.rm = TRUE),
+    exper_dm   = exper   - mean(exper,   na.rm = TRUE),
+    expersq_dm = expersq - mean(expersq, na.rm = TRUE),
+    educ_dm    = educ    - mean(educ,    na.rm = TRUE),
+    black_dm   = black   - mean(black,   na.rm = TRUE),
+    hisp_dm    = hisp    - mean(hisp,    na.rm = TRUE),
+    married_dm = married - mean(married, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+reg_within_full <- feols(lwage_dm ~ -1 + union_dm + exper_dm + expersq_dm + educ_dm + black_dm + hisp_dm + married_dm,
+                         data = wagepan_dm, vcov = "hetero")
+reg_within_full
+```
+
+
+## `feols(... | nr, ...)`
+
+```{r}
+reg_fe_ind_full <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr,
+                         data = wagepan, vcov = "hetero")
+reg_fe_ind_full
+```
+
+The variables $educ$, $black$, and $hisp$ are time invariant at the individual level and therefore collinear with the individual fixed effects, so they are removed.
+
+
+## First Differences in the Full Panel
+
+
+
+```{r}
+wagepan_fd <- wagepan %>%
+  arrange(nr, year) %>%
+  group_by(nr) %>%
+  mutate(
+    d_lwage   = lwage   - lag(lwage),
+    d_union   = union   - lag(union),
+    d_exper   = exper   - lag(exper),
+    d_expersq = expersq - lag(expersq),
+    d_educ    = educ    - lag(educ),
+    d_black   = black   - lag(black),
+    d_hisp    = hisp    - lag(hisp),
+    d_married = married - lag(married)
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(d_lwage))
+
+reg_fd_full <- feols(d_lwage ~ -1 + d_union + d_exper + d_expersq + d_educ + d_black + d_hisp + d_married,
+                     data = wagepan_fd, vcov = "hetero")
+reg_fd_full
+```
+
+
+
+::: {.callout-important title="First Differences and the Within Estimator Differ When T>2"}
+
+The **first-difference estimator** produces a different coefficient (≈ 0.043). Both estimators remain consistent under the standard assumptions, but they use the panel information differently.
+:::
+
+
+## Individual and Time Fixed Effects
+
+```{r}
+reg_fe_indtime_full <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr + year,
+                             data = wagepan, vcov = "hetero")
+reg_fe_indtime_full
+```
+
+
+
+As shown in the output, four variables are removed ($exper$, $educ$, $black$, and $hisp$): $exper$ is collinear with the time fixed effects because it increases by 1 each year for every individual, while the other three variables are collinear with the individual fixed effects.
+
+
+**Final comparison for `wagepan`:**
+
+```{r}
+modelsummary(
+  list("Pooled OLS"   = reg_pooled,
+       "FE | nr"      = reg_fe_ind_full,
+       "FE | nr+year" = reg_fe_indtime_full),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+The coefficient on $union$ falls from 0.18 (18%) to 0.08 (approximately 8% with individual and time fixed effects): half of the initial association was attributable to individual characteristics and time shocks correlated with union membership.
+
+
+
+# Clustered Standard Errors
+
+So far, we have used heteroskedasticity-robust standard errors (Eicker-Huber-White). These are appropriate for cross-sectional data when each observation is independent and the only concern is nonconstant error variance. These standard errors allow $\text{Var}(u_i)$ to **vary** across observations, but they **assume** that errors from different observations are uncorrelated, $\text{Cov}(u_i, u_j) = 0$ for $i \neq j$.
+
+
+In panel data, the same individual is observed repeatedly, and that individual's errors are often **correlated over time** because of unobserved characteristics and persistent shocks, such as ability, motivation, or local conditions. This is **serial correlation within an individual**.
+
+Cluster-robust standard errors address this issue: they allow **arbitrary correlation within a cluster**—here, the individual (`nr`)—including heteroskedasticity and serial correlation, while assuming independence **across** clusters. They are therefore valid in the presence of heteroskedasticity and serial correlation within individuals.
+
+
+If we used only `vcov = "hetero"`, the standard errors would typically be **underestimated**, the $t$ statistics would be too large, and the null hypothesis would be rejected too often, producing spurious statistical significance. In short, serial correlation within individuals makes conventional heteroskedasticity-robust standard errors unreliable. Cluster-robust standard errors correct this problem.
+
+
+
+```{r}
+reg_fe_cluster <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr + year,
+                        data = wagepan, vcov = "cluster")
+modelsummary(
+  list("FE (hetero)"      = reg_fe_indtime_full,
+       "FE (cluster, nr)" = reg_fe_cluster),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+When we select `vcov = "cluster"`, `feols` automatically uses the first fixed-effects dimension to identify the clusters: here, `nr` (individuals). Alternatively, we can use `vcov = ~nr`.
+
+
+# Crime and Unemployment
+
+We load the `crime2` dataset, which contains observations on 46 U.S. cities, each observed in 1982 and 1987 ($T=2$, $n \times T = 92$ observations):
+
+- $crmrte$: crimes per 1,000 inhabitants
+- $unem$: unemployment rate
+
+
+```{r}
+data("crime2", package = "wooldridge")
+head(crime2)
+```
+
+`crime2` does not contain an explicit city identifier. The rows are ordered so that each consecutive pair of observations refers to the same city (row 1 = city 1 in 1982; row 2 = city 1 in 1987; and so on). We manually create the variable `city`:
+
+```{r}
+crime2 <- crime2 %>%
+  mutate(city = rep(1:(nrow(crime2)/2), each = 2))
+```
+
+`ccrmrte` and `cunem` already contain the first differences, $1987 - 1982$, for each city (they are `NA` in the 1982 row and contain the differenced value in the 1987 row).
+
+
+## Pooled OLS
+
+```{r}
+regc_pooled <- feols(crmrte ~ unem, data = crime2, vcov = "hetero")
+regc_pooled
+```
+
+A one-percentage-point increase in the unemployment rate is **associated**, on average, with a decrease of approximately 0.31 crimes per 1,000 inhabitants. This counterintuitive result suggests that the relationship between unemployment and crime is confounded by city characteristics, such as density, demographics, and wealth, and by differences between the two years.
+
+
+## Time Fixed Effects
+
+We can control for shocks common to all cities in each year (time fixed effects) in three equivalent ways.
+
+**Explicit indicator `d87`:**
+
+```{r}
+regc_d87 <- feols(crmrte ~ unem + d87, data = crime2, vcov = "hetero")
+regc_d87
+```
+
+**`feols(... | year, ...)`:**
+
+```{r}
+regc_fe_year <- feols(crmrte ~ unem | year, data = crime2, vcov = "hetero")
+regc_fe_year
+```
+
+**Within transformation by year** (we subtract the mean across cities in the same year from each city's observation):
+
+```{r}
+crime2_dm_year <- crime2 %>%
+  group_by(year) %>%
+  mutate(crmrte_dm = crmrte - mean(crmrte),
+         unem_dm   = unem   - mean(unem)) %>%
+  ungroup()
+
+regc_within_year <- feols(crmrte_dm ~ -1 + unem_dm, data = crime2_dm_year, vcov = "hetero")
+regc_within_year
+```
+
+
+```{r}
+modelsummary(
+  list("Dummy d87"    = regc_d87,
+       "|year"        = regc_fe_year,
+       "Within year"  = regc_within_year),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+
+After removing the common year effect, the association between unemployment and crime changes sign: $unem$ is now associated with an increase of approximately 0.43 crimes per 1,000 inhabitants.
+
+
+## City Fixed Effects
+
+
+
+**First differences (without an intercept)**—use `ccrmrte` and `cunem`, which are already included in the dataset:
+
+```{r}
+regc_fd <- feols(ccrmrte ~ -1 + cunem, data = crime2, vcov = "hetero")
+regc_fd
+```
+
+**`feols(... | city, ...)`:**
+
+```{r}
+regc_fe_city <- feols(crmrte ~ unem | city, data = crime2, vcov = "hetero")
+regc_fe_city
+```
+
+```{r}
+modelsummary(
+  list("FD (no intercept)" = regc_fd,
+       "|city"              = regc_fe_city),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+
+
+## Individual and Time Fixed Effects
+
+We apply the result from Stock and Watson (p. 283): with $T=2$, a **first-difference regression with an intercept** is equivalent to including individual and time fixed effects.
+
+```{r}
+regc_fd_int <- feols(ccrmrte ~ cunem, data = crime2, vcov = "hetero")
+regc_fd_int
+
+regc_fe_full <- feols(crmrte ~ unem | city + year, data = crime2, vcov = "hetero")
+regc_fe_full
+```
+
+```{r}
+modelsummary(
+  list("FD with intercept" = regc_fd_int,
+       "|city + year"       = regc_fe_full),
+  gof_omit = "AIC|BIC|RMSE|R2 Adj."
+)
+```
+
+Controlling for both unit and time fixed effects, a one-percentage-point increase in unemployment is associated with an increase of approximately 2.2 crimes per 1,000 inhabitants.

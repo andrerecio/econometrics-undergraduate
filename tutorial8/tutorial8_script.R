@@ -1,4 +1,4 @@
-# Esercitazione 8 - Regressione con dati panel
+# Tutorial 8 - regression with panel data
 
 library(tidyverse)
 library(knitr)
@@ -8,7 +8,7 @@ library(fixest)
 library(wooldridge)
 
 
-# Dataset wagepan: 545 lavoratori dal 1980 al 1987 (T=8)
+# wagepan dataset: 545 workers from 1980 to 1987 (T=8)
 data("wagepan", package = "wooldridge")
 datasummary_skim(wagepan)
 head(wagepan)
@@ -23,15 +23,15 @@ reg_pooled
 
 
 # ============================================================
-# T=2: Effetti fissi individuali
+# T=2: Individual fixed effects
 # ============================================================
 
-# Sottocampione con due soli periodi: 1980 e 1987
+# Subsample with only two periods: 1980 and 1987
 wagepan_2periods <- wagepan %>% filter(year %in% c(1980, 1987))
 head(wagepan_2periods)
 
 
-# --- (1) First difference (senza intercetta) ---
+# --- (1) First differences (without an intercept) ---
 wagepan_2periods_fd <- wagepan_2periods %>%
   arrange(nr, year) %>%
   group_by(nr) %>%
@@ -53,7 +53,7 @@ reg_fd <- feols(d_lwage ~ -1 + d_union + d_exper + d_expersq + d_educ + d_black 
 reg_fd
 
 
-# --- (2) Within: deviazione dalla media individuale ---
+# --- (2) Within transformation: deviations from individual means ---
 wagepan_2periods_dm <- wagepan_2periods %>%
   group_by(nr) %>%
   mutate(
@@ -73,25 +73,25 @@ reg_within <- feols(lwage_dm ~ union_dm + exper_dm + expersq_dm + educ_dm + blac
 reg_within
 
 
-# --- (3) LSDV: dummy individuali con as.factor(nr) ---
-# as.factor(nr) per primo => feols rimuove educ/black/hisp (come |nr), non le dummy
+# --- (3) LSDV: individual indicators using as.factor(nr) ---
+# Placing as.factor(nr) first makes feols remove educ/black/hisp (as with |nr), not the indicators
 reg_lsdv <- feols(lwage ~ as.factor(nr) + union + exper + expersq + educ + black + hisp + married,
                   data = wagepan_2periods, vcov = "hetero")
 etable(reg_lsdv, keep = c("union", "exper", "expersq"),
-       order = c("union", "exper", "expersq"), signif.code = NA)   # 545 dummy nascoste
+       order = c("union", "exper", "expersq"), signif.code = NA)   # 545 indicators hidden
 
 
-# --- (4) feols con |nr ---
+# --- (4) feols with |nr ---
 reg_fe_ind <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr,
                     data = wagepan_2periods, vcov = "hetero")
 reg_fe_ind
 
 
 # ============================================================
-# T=2: Effetti fissi individuali + temporali
+# T=2: Individual and time fixed effects
 # ============================================================
 
-# First difference CON intercetta = ind FE + time FE (Stock & Watson p.283)
+# First differences WITH an intercept = individual FE + time FE (Stock & Watson, p. 283)
 reg_fd_int <- feols(d_lwage ~ d_union + d_exper + d_expersq + d_educ + d_black + d_hisp + d_married,
                     data = wagepan_2periods_fd, vcov = "hetero")
 reg_fd_int
@@ -101,16 +101,16 @@ reg_fe_indtime <- feols(lwage ~ union + exper + expersq + educ + black + hisp + 
 reg_fe_indtime
 
 modelsummary(
-  list("FD con intercetta" = reg_fd_int, "|nr + year" = reg_fe_indtime),
+  list("FD with intercept" = reg_fd_int, "|nr + year" = reg_fe_indtime),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
 
 # ============================================================
-# T>2: Panel completo
+# T>2: Full panel
 # ============================================================
 
-# --- Within sul panel completo ---
+# --- Within transformation for the full panel ---
 wagepan_dm <- wagepan %>%
   group_by(nr) %>%
   mutate(
@@ -130,13 +130,13 @@ reg_within_full <- feols(lwage_dm ~ -1 + union_dm + exper_dm + expersq_dm + educ
 reg_within_full
 
 
-# --- |nr sul panel completo ---
+# --- |nr for the full panel ---
 reg_fe_ind_full <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr,
                          data = wagepan, vcov = "hetero")
 reg_fe_ind_full
 
 
-# --- First difference sul panel completo (T-1 = 7 differenze per individuo) ---
+# --- First differences for the full panel (T-1 = 7 differences per individual) ---
 wagepan_fd <- wagepan %>%
   arrange(nr, year) %>%
   group_by(nr) %>%
@@ -158,29 +158,29 @@ reg_fd_full <- feols(d_lwage ~ -1 + d_union + d_exper + d_expersq + d_educ + d_b
 reg_fd_full
 
 
-# Confronto: demean = |nr (= 0.082), ma FD diverso (= 0.043)
+# Comparison: demeaning = |nr (= 0.082), but FD differs (= 0.043)
 modelsummary(
   list("Within" = reg_within_full, "|nr" = reg_fe_ind_full, "FD" = reg_fd_full),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
 
-# --- FE individuali + temporali sul panel completo ---
+# --- Individual and time FE for the full panel ---
 reg_fe_indtime_full <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr + year,
                              data = wagepan, vcov = "hetero")
 reg_fe_indtime_full
 
 
-# Confronto finale wagepan
+# Final wagepan comparison
 modelsummary(
   list("Pooled OLS" = reg_pooled, "FE | nr" = reg_fe_ind_full, "FE | nr+year" = reg_fe_indtime_full),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
 
-# --- Errori standard clustered: hetero vs cluster ---
-# hetero corregge l'eteroschedasticita; cluster corregge anche la correlazione
-# seriale entro l'individuo. Il coeff. di union non cambia, solo la s.e.
+# --- Clustered standard errors: heteroskedasticity-robust versus cluster-robust ---
+# "hetero" corrects for heteroskedasticity; "cluster" also corrects for serial
+# correlation within individuals. The union coefficient is unchanged; only its SE changes.
 reg_fe_cluster <- feols(lwage ~ union + exper + expersq + educ + black + hisp + married | nr + year,
                         data = wagepan, vcov = "cluster")
 modelsummary(
@@ -190,12 +190,12 @@ modelsummary(
 
 
 # ============================================================
-# Caso di studio: crime2 (46 città, T=2: 1982 e 1987)
+# Case study: crime2 (46 cities, T=2: 1982 and 1987)
 # ============================================================
 data("crime2", package = "wooldridge")
 head(crime2)
 
-# crime2 non ha colonna city: le righe sono ordinate a coppie (82, 87) per città
+# crime2 has no city column: rows are ordered in city pairs (1982, 1987)
 crime2 <- crime2 %>% mutate(city = rep(1:(nrow(crime2)/2), each = 2))
 
 
@@ -204,7 +204,7 @@ regc_pooled <- feols(crmrte ~ unem, data = crime2, vcov = "hetero")
 regc_pooled
 
 
-# --- Effetti fissi temporali (tre modi equivalenti) ---
+# --- Time fixed effects (three equivalent methods) ---
 regc_d87       <- feols(crmrte ~ unem + d87,   data = crime2, vcov = "hetero")
 regc_fe_year   <- feols(crmrte ~ unem | year,  data = crime2, vcov = "hetero")
 
@@ -216,27 +216,27 @@ crime2_dm_year <- crime2 %>%
 regc_within_year <- feols(crmrte_dm ~ -1 + unem_dm, data = crime2_dm_year, vcov = "hetero")
 
 modelsummary(
-  list("Dummy d87" = regc_d87, "|year" = regc_fe_year, "Within anno" = regc_within_year),
+  list("Indicator d87" = regc_d87, "|year" = regc_fe_year, "Within year" = regc_within_year),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
 
-# --- Effetti fissi individuali (per città) ---
-# ccrmrte, cunem sono già le first difference 1987-1982 per ogni città
+# --- City fixed effects ---
+# ccrmrte and cunem already contain the 1987-1982 first differences for each city
 regc_fd      <- feols(ccrmrte ~ -1 + cunem, data = crime2, vcov = "hetero")
 regc_fe_city <- feols(crmrte ~ unem | city,  data = crime2, vcov = "hetero")
 
 modelsummary(
-  list("FD (no intercetta)" = regc_fd, "|city" = regc_fe_city),
+  list("FD (no intercept)" = regc_fd, "|city" = regc_fe_city),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
 
 
-# --- FE individuali + temporali: FD con intercetta = |city + year ---
+# --- Individual and time FE: FD with an intercept = |city + year ---
 regc_fd_int  <- feols(ccrmrte ~ cunem,           data = crime2, vcov = "hetero")
 regc_fe_full <- feols(crmrte ~ unem | city + year, data = crime2, vcov = "hetero")
 
 modelsummary(
-  list("FD con intercetta" = regc_fd_int, "|city + year" = regc_fe_full),
+  list("FD with intercept" = regc_fd_int, "|city + year" = regc_fe_full),
   gof_omit = "AIC|BIC|RMSE|R2 Adj."
 )
