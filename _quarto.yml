@@ -6,11 +6,13 @@ project:
     - introduction/*.qmd
     - tutorial*/*.qmd
     - problem-sets/*.qmd
+    - "!problem-sets/problem_set_02.qmd"
+    - "!problem-sets/college_gpa_problem_set.qmd"
     - "!slides-iv-2/*.qmd"
 
 website:
   title: "Undergraduate Econometrics"
-  site-url: "https://andrerecio.github.io/econometrics-undergraduate/"
+  site-url: "https://andrearecine.me/econometrics-undergraduate/"
   repo-url: "https://github.com/andrerecio/econometrics-undergraduate"
   repo-actions: [issue]
   navbar:
