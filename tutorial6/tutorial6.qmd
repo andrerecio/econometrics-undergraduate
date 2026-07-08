@@ -1,0 +1,275 @@
+---
+title: "Tutorial 6"
+subtitle: "Linear Probability Model (LPM)"
+author: "Andrea Recine"
+date: today
+lang: en
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    toc-location: right
+    number-sections: true
+
+    # Code
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+
+    # Output
+    embed-resources: true
+
+    # Typography
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+## Setup
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(modelsummary)
+library(fixest)
+library(wooldridge)
+```
+
+
+## Linear Probability Model (LPM)
+
+
+We estimate the following linear probability model (LPM), which assumes a linear relationship between the explanatory variables and the probability of the event:
+$$
+\Pr(Y=1 \mid X_1, \dots, X_k) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \dots + \beta_k X_k
+$$
+
+Under the assumption $\mathbb{E}(u_i \mid X_i) = 0$, it follows that:
+$$
+\mathbb{E}(Y \mid X = x) = \Pr(Y = 1 \mid X = x)
+$$
+
+That is, the conditional expectation equals the probability that $Y = 1$ given $X = x$.
+
+$\beta_1$ represents the change in the probability that $Y = 1$ resulting from a one-unit change in $X$, or more generally:
+
+$$
+\beta_1 = \frac{\Pr(Y = 1 \mid X = x + \Delta x) - \Pr(Y = 1 \mid X = x)}{\Delta x}
+$$
+
+The OLS estimation procedure is unchanged.
+
+The LPM is straightforward to estimate and interpret. However, it can produce predicted probabilities below zero or above one, and its marginal effects are constant (unlike those of logit and probit models).
+
+::: {.callout-important title="Warning: heteroskedasticity is inherent in the LPM"}
+
+Because $Y$ is a binary variable $(0/1)$, conditional on $X$ it follows a Bernoulli distribution with parameter $p(X) = \Pr(Y=1 \mid X)$. Consequently, the variance of the error $u = Y - \mathbb{E}(Y \mid X)$ is:
+
+$$
+\mathrm{Var}(u \mid X) = p(X)\bigl(1 - p(X)\bigr)
+$$
+
+The variance depends on $X$ **by construction**: this follows directly from the binary nature of the dependent variable. Conventional OLS standard errors are therefore invalid, so we **always** use heteroskedasticity-robust standard errors. As discussed previously, using heteroskedasticity-robust standard errors is standard practice in linear regression because they are valid regardless of the form of heteroskedasticity.
+
+:::
+
+
+## Dataset `alcohol`
+
+
+We load the `alcohol` data set, which contains 9822 observations and 33 variables.
+
+```{r}
+data("alcohol", package = "wooldridge")
+head(alcohol)
+```
+
+### Variable descriptions
+
+| Variable   | Description                                                                               |
+| :---------- | :---------------------------------------------------------------------------------------- |
+| $abuse$     | Dummy variable (1 = abuses alcohol, 0 = does not abuse alcohol).                                  |
+| $employ$    | Binary dependent variable (1 = employed, 0 = not employed).                              |
+| $married$   | Dummy variable (1 = married, 0 = not married).                    |
+| $educ$      | Years of education.       |
+| $age$       | Age in years.       |
+
+
+
+In other words, our dependent variable, $Y$, is a dummy variable that takes only two values (0-1).
+
+
+```{r}
+datasummary_skim(alcohol)
+```
+
+
+```{r}
+reg_lpm_alcohol <- feols(employ ~ abuse + educ + age + married, data = alcohol, vcov = "hetero")
+modelsummary(list("Employ" = reg_lpm_alcohol), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+**Interpretation of the coefficients:**
+
+- The coefficient on $abuse$ is -0.018: alcohol abuse is associated with an employment probability approximately 1.8 percentage points **lower** than that of a man who does not abuse alcohol, holding age, years of education, and marital status constant.
+
+- The coefficient on $educ$ is 0.017: each additional year of education is associated with a 1.7 percentage point **increase** in the probability of being employed, holding age, alcohol abuse, and marital status constant.
+
+- The coefficient on $age$ is -0.003: each additional year of age is associated with an employment probability approximately 0.3 percentage points **lower**, holding alcohol abuse, years of education, and marital status constant.
+
+- The coefficient on $married$ is 0.084: being married is associated with an employment probability 8.4 percentage points higher than that of an unmarried man, holding age, alcohol abuse, and years of education constant.
+
+In this case, unlike in logit and probit models, the marginal effects are constant and do not depend on the values of the other explanatory variables. Each estimated coefficient directly represents the marginal effect of a one-unit change in the explanatory variable on the probability that the dependent variable equals 1, holding the other variables constant.
+
+
+
+::: {.callout-note title="Note"}
+Pay close attention to percentage variables expressed as decimals (for example, 0.26 represents 26%). An example is `pirat` (the payment-to-income ratio) from the lecture *Analysis of Mortgage Approval Using HMDA Data*.
+
+If the estimated coefficient on `pirat` were 0.5, then a 1 percentage point increase in `pirat` would be associated with a 0.5 percentage point increase in the probability of mortgage approval. This is because 1 percentage point is represented as 0.01 in decimal form, so the marginal effect would be 0.5 $\times$ 0.01 = 0.005, or a 0.5 percentage point increase in the probability of mortgage approval.
+:::
+
+
+### Predicted probabilities
+
+Consider the predicted probability of employment for a 30-year-old married man with 12 years of education who does not abuse alcohol:
+
+```{r}
+predict(reg_lpm_alcohol, newdata =
+        data.frame(abuse = 0, educ = 12, age = 30, married = 1))
+```
+
+
+Now consider the predicted probability of employment for a 30-year-old unmarried man with 10 years of education who abuses alcohol:
+
+```{r}
+predict(reg_lpm_alcohol, newdata =
+        data.frame(abuse = 1, educ = 10, age = 30, married = 0))
+```
+
+
+The difference between the two predicted probabilities is approximately 13.56 percentage points (0.9246885 - 0.7891304 = 0.1355581).
+
+
+For the exam, you should be able to perform this type of calculation by hand by substituting the values of the explanatory variables into the estimated linear probability model.
+
+
+::: {.callout-important title="Percentage points vs. percentage changes"}
+
+When interpreting the coefficients of an LPM, it is essential to distinguish between two concepts that are often confused:
+
+- **Percentage points (p.p.)**: the *absolute* difference between two probabilities (or percentages). In the example above, the predicted probability rises from $0.7891$ to $0.9247$: the difference is $0.9247 - 0.7891 = 0.1356$, an increase of approximately **13.56 percentage points**.
+
+- **Percentage change (%)**: the *relative* change from the initial value. The same change corresponds to a percentage change of
+$$
+\frac{0.9247 - 0.7891}{0.7891} \approx 0.1718 = 17.18\%
+$$
+so the probability of being employed is approximately 17.2% **higher** than its initial value.
+
+LPM coefficients are **always expressed in percentage points**, not as percentage changes: the coefficient $\hat{\beta}_j$ measures the absolute change in the probability $\Pr(Y=1 \mid X)$, not the change relative to its initial level.
+
+:::
+
+
+## Probability of being arrested: `crime1`
+
+
+```{r}
+data("crime1", package = "wooldridge")
+head(crime1)
+```
+
+
+$narr86$ is the number of times an individual was arrested in 1986. Using this variable, we create a dummy variable `arrested` that equals 1 if an individual was arrested at least once in 1986 and 0 otherwise.
+
+```{r}
+crime1 <- crime1 %>%
+  mutate(arrested = ifelse(narr86 > 0, 1, 0))
+```
+
+The other variables are:
+
+
+| Variable   | Description                                                                               |
+| :---------- | :---------------------------------------------------------------------------------------- |
+| $pcnv$     | Proportion of previous arrests that resulted in a conviction.                      |
+| $avgsen$    | Average sentence served for previous convictions (in months).                              |
+| $tottime$   | Total number of months spent in prison since age 18 and before 1986.                    |
+| $ptime86$     | Months spent in prison in 1986.       |
+| $qemp86$     | Number of quarters in which the individual was employed in 1986.       |
+| $black$     | Dummy variable (1 = Black, 0 = otherwise).       |
+| $hispan$     | Dummy variable (1 = Hispanic, 0 = otherwise).       |
+
+
+
+
+::: {.callout-note title="How `pcnv` is constructed"}
+
+For each individual $i$, the variable is defined as
+
+$$
+pcnv_i = \frac{\text{number of previous arrests of } i \text{ resulting in conviction}}{\text{total number of previous arrests of } i}
+$$
+
+It is therefore an **individual-level proportion expressed as a decimal** (analogous to `pirat` in the mortgage lecture), bounded between 0 and 1—not a percentage.
+
+:::
+
+
+
+
+We estimate the following LPM:
+
+```{r}
+reg_lpm_crime <- feols(arrested ~ pcnv + avgsen + tottime + ptime86 + qemp86 + black + hispan, data = crime1, vcov = "hetero")
+modelsummary(list("Arrested" = reg_lpm_crime), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
+```
+
+
+
+The variable $pcnv$ is a proportion bounded between zero and one:
+
+- **Interpretation 1 (over the variable's full range)**: changing $pcnv$ from 0 to 1 means moving from "none of the previous arrests resulted in a conviction" to "all previous arrests resulted in a conviction." Such a large change reduces the probability of arrest by only 15.2 percentage points.
+
+- **Interpretation 2 (for a 1 percentage point change)**: because $pcnv$ is expressed as a decimal (just like `pirat` in the mortgage lecture), an increase of "1 percentage point" corresponds to $\Delta pcnv = 0.01$. The predicted change in the probability of arrest is therefore $-0.152 \times 0.01 = -0.00152$, or a **decrease of 0.152 percentage points**.
+
+
+The two interpretations describe the **same marginal effect** ($-0.152$, constant by construction in the LPM), expressed for different units of change.
+
+
+$qemp86$ is the number of quarters of employment in 1986 (from 0 to 4) and has a coefficient of -0.038. Holding the other variables constant, we can interpret it in two equivalent ways:
+
+
+- **Effect of one additional quarter**: moving from 0 to 1 quarter of employment is associated with an approximately 3.8 percentage point lower probability of being arrested.
+
+
+- **Comparison of the two endpoints**: a man employed in all four quarters has an approximately 15.2 percentage point lower probability of being arrested ($4 \times 0.038 = 0.152$) than a man who was never employed during the year.
+
+
+The omitted category consists of men who are neither Black nor Hispanic (White/other ethnicity, that is, $black=0$ and $hispan=0$): the coefficients on $black$ and $hispan$ must be interpreted **relative to this reference group**.
+
+- The coefficient on $black$ is 0.17: holding the other variables constant, a Black man has a 17 percentage point higher probability of being arrested than a White man or a man of another ethnicity.
+
+- The coefficient on $hispan$ is 0.096: holding the other variables constant, a Hispanic man has a 9.6 percentage point higher probability of being arrested than a White man or a man of another ethnicity.
