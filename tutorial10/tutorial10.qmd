@@ -1,0 +1,315 @@
+---
+title: "Tutorial 10"
+subtitle: "Regression with instrumental variables (part 2)"
+author: "Andrea Recine"
+date: today
+lang: en
+
+format:
+  html:
+    # Layout
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    toc-location: right
+    number-sections: true
+
+    # Code
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+
+    # Output
+    embed-resources: true
+
+    # Typography
+    fontsize: 1.1em
+    linestretch: 1.6
+
+execute:
+  warning: false
+  message: false
+  echo: true
+
+knitr:
+  opts_chunk:
+    comment: "#>"
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 4.5
+
+---
+
+
+
+# Angrist and Evans (1998)
+
+In [*Children and Their Parents' Labor Supply: Evidence from Exogenous Variation in Family Size*](https://www.jstor.org/stable/116844?seq=1), published in the *American Economic Review*, Angrist and Evans analyze the effect of children on maternal labor supply (measured in this Tutorial as weekly hours worked).
+
+To address the endogeneity of fertility decisions—arising from their possible correlation with other determinants of labor supply—Angrist and Evans focus on mothers with at least two children. They use two instruments: whether the first two children are of the same sex ($samesex$) and whether the second birth produced twins ($multi2nd$).
+
+Thus:
+
+- $Y_i = hours_i$: the mother's weekly hours worked;
+- $X_i = kids_i$: number of children, **endogenous** with respect to $u_i$ (fertility decisions are correlated with unobserved determinants of labor supply);
+- $W_i$: included exogenous controls—$educ$, $age$, $black$, and $hispan$;
+- $Z_i$: the instrument(s)—$samesex$ (the first two children are of the same sex) and/or $multi2nd$ (the second birth produced twins).
+
+The equation of interest is:
+
+$$
+hours_i = \beta_0 + \beta_1 kids_i + \delta_1 educ_i + \delta_2 age_i + \delta_3 black_i + \delta_4 hispan_i + u_i
+$$
+
+
+
+**Relevance** ($cor(Z_i, kids_i) \neq 0$). The data show that families whose first two children are of the same sex are more likely to have a third child: among women with two children, the fraction who have a third rises from approximately 37%
+(*one boy/one girl*) to approximately 43% (same sex) in 1980 [Angrist & Evans 1998, Table 3, p. 457]. A twin second birth instead increases family size *mechanically*. This distinction matters: $samesex$ shifts $kids$ through preferences for a mixed-sex composition, whereas $multi2nd$ shifts $kids$ mechanically.
+
+**Conditional exogeneity** ($E(u_i \mid W_i, Z_i) = E(u_i \mid W_i) = 0$). For $samesex$, the sex composition of the first two children is effectively randomly assigned. Angrist and Evans show that, even in very large samples, mothers whose children are of the same sex do not differ in age, age at first birth, race, or education from mothers whose children are of different sexes (no difference is significant at the 5% level) [Angrist & Evans 1998, Table 4 and p. 458].
+
+
+
+The argument for $multi2nd$ is more delicate. Twinning is correlated with observable maternal characteristics: it is more common among older, Black, and more highly educated women [p. 458]. For *Twins-2*, the differences in covariate means are consequently large and statistically significant (e.g., age $+0.25$, s.e. $0.06$; education $+0.094$, s.e. $0.042$) [Table 4, p. 459]. Exogeneity therefore holds **only conditional on observables**: all characteristics correlated with twinning must be observed and included among the controls $W_i$ [p. 469].
+
+In both cases, the **exclusion restriction** requires that neither the children's sex composition nor a twin birth directly affect hours worked except through the number of children. In practice, $Z$ must affect $Y$ *only* through $X$ (no direct effect $Z \to Y$), and $Z$ must be uncorrelated with the other unobserved determinants of $Y$. These are the two aspects of the condition $E(u_i \mid W_i, Z_i) = E(u_i \mid W_i) = 0$.
+
+
+::: {.callout-important title="samesex vs multi2nd"}
+
+Table 4 of the paper reports differences in means between observations for which the instrument equals 1 and those for which it equals 0, with standard errors:
+
+- **samesex**: no significant differences → the instrument is balanced even *unconditionally*;
+
+- **multi2nd (Twins-2)**: large and significant differences in age, age at first birth, ethnicity, and education.
+
+:::
+
+
+::: {.callout-note title="Exclusion restriction for samesex"}
+Angrist and Evans take seriously a potential concern about the exclusion of $samesex$: children's sex could affect labor supply through channels other than family size (paternal involvement, differential treatment of boys and girls, or a higher probability of disability among boys). The key point is that $samesex$ is an **interaction term**:
+$$
+samesex = \underbrace{s_1 s_2}_{\text{Two boys}} + \underbrace{(1-s_1)(1-s_2)}_{\text{Two girls}},
+$$
+The indicators for the sex of the first and second child ($s_1$, $s_2$) can therefore be included as **additive controls**—without absorbing the instrumental variation—to account for these direct effects and reduce omitted-variable bias [Angrist & Evans 1998, eq. (4)–(5), pp. 460–461].
+
+The same decomposition into *Two boys* and *Two girls* provides two instruments. The **$J$ test** discussed below assesses precisely these direct effects, which would differ between two-boy and two-girl families even though the effect of a third child would not.
+
+
+The specification used here with `labsup` does not include $s_1$ and $s_2$. This is a pedagogical simplification that should be kept in mind.
+:::
+
+
+
+The `labsup` dataset contains a subset of the data used by Angrist and Evans (1998).
+
+
+## Setup
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(modelsummary)
+library(fixest)
+library(wooldridge)
+library(car)
+```
+
+
+```{r}
+data("labsup", package = "wooldridge")
+head(labsup)
+```
+
+
+```{r}
+# IV model (samesex as an instrument for kids)
+iv_labsup <- feols(hours ~ educ + age + black + hispan | kids ~ samesex, data = labsup, vcov = "hetero")
+
+```
+
+
+First stage:
+```{r}
+summary(iv_labsup, stage = 1)
+```
+
+
+**Instrument relevance test:**
+```{r}
+fitstat(iv_labsup, type = "ivwald")
+```
+
+$F \approx 45.8$: well above the rule-of-thumb threshold of 10, so $samesex$ is a **strong** instrument for $kids$.
+
+
+Using `linearHypothesis`:
+
+
+
+```{r}
+
+first_stage <- feols(kids ~ samesex + educ + age + black + hispan, data = labsup, vcov = "hetero")
+
+linearHypothesis(first_stage, "samesex = 0")
+```
+
+
+The Wald statistic exceeds $m \times 10 = 10$, confirming the `fitstat` result.
+
+
+The second-stage estimate is:
+
+
+```{r}
+summary(iv_labsup)
+```
+
+Comparison with OLS estimates.
+
+```{r}
+# OLS: hours worked and number of children
+ols_labsup <- feols(hours ~ kids + educ + age + black + hispan, data = labsup, vcov = "hetero")
+
+modelsummary(
+  list("OLS" = ols_labsup,
+       "IV" = iv_labsup),
+  gof_omit = "IC|Adj|RMSE"
+)
+```
+
+
+::: {.callout-note title="Question"}
+1. How should the coefficients on $educ$ and $kids$ in the OLS regression be interpreted?
+:::
+
+
+**Twin birth as an instrument.** We now estimate the model using $multi2nd$ as an instrument for $kids$:
+
+```{r}
+iv_labsup_twins <- feols(hours ~ educ + age + black + hispan | kids ~ multi2nd, data = labsup, vcov = "hetero")
+```
+
+First stage:
+```{r}
+summary(iv_labsup_twins, stage = 1)
+```
+
+Relevance test:
+```{r}
+fitstat(iv_labsup_twins, type = "ivwald")
+```
+
+Here $Wald \approx 194$: $multi2nd$ is a **strong** instrument and is even more relevant than $samesex$—a twin birth mechanically adds exactly one child and therefore produces a pronounced shift in $kids$.
+
+Using `linearHypothesis`:
+
+
+```{r}
+
+first_stage_twins <- feols(kids ~ multi2nd + educ + age + black + hispan, data = labsup, vcov = "hetero")
+
+linearHypothesis(first_stage_twins, "multi2nd = 0")
+```
+
+
+
+
+Second stage:
+```{r}
+summary(iv_labsup_twins, stage = 2)
+```
+
+
+**Comparison:**
+
+```{r}
+modelsummary(
+  list("Hours (IV samesex)" = iv_labsup ,
+       "Hours (IV multi2nd)" = iv_labsup_twins),
+  gof_omit = "IC|Adj|RMSE"
+)
+```
+
+## Overidentification
+
+We estimate the overidentified model using both instruments:
+
+```{r}
+iv_labsup_twins_over <- feols(hours ~ educ + age + black + hispan | kids ~ multi2nd + samesex, data = labsup, vcov = "hetero")
+iv_labsup_twins_over
+```
+
+The first-stage estimates are:
+
+```{r}
+summary(iv_labsup_twins_over, stage = 1)
+```
+
+
+**Joint relevance test.** We assess whether the two instruments are jointly strong:
+
+
+```{r}
+fitstat(iv_labsup_twins_over, type = "ivwald")
+```
+
+
+Using `linearHypothesis`:
+
+```{r}
+first_stage_over <- feols(kids ~ multi2nd + samesex + educ + age + black + hispan, data = labsup, vcov = "hetero")
+
+linearHypothesis(first_stage_over, c("multi2nd = 0", "samesex = 0"))
+```
+
+
+$Wald \approx 234.72$: well above the threshold $m \times 10 = 20$. After adding $samesex$ to $multi2nd$, the instruments remain jointly **very strong**.
+
+
+**Note:** `fitstat` from `fixest` uses the $F$ distribution. Thus, `stat` = 117.36 equals 234.72/2 and is well above the threshold of 10.
+
+
+**$J$ test of overidentifying restrictions.**
+
+
+We apply the same procedure used for Card (2SLS residuals obtained with `resid()`, an auxiliary regression, $J = m \cdot F$, and a $p$-value from $\chi^2_{m-\ell}$). Here $m = 2$ and $\ell = 1$.
+
+
+Under $H_0$, $J \sim \chi^2_1$:
+
+```{r}
+labsup <- labsup |> mutate(uhat = resid(iv_labsup_twins_over))
+
+Jreg_labsup <- feols(uhat ~ educ + age + black + hispan + samesex + multi2nd, data = labsup, vcov = "iid")
+
+
+linearHypothesis(Jreg_labsup, c("samesex = 0", "multi2nd = 0"))
+
+```
+
+0.589 is below 3.84, so we do not reject the null hypothesis that the instruments are jointly exogenous.
+
+**Remember:** We must use critical values from the $\chi^2$ distribution with $m - \ell = 1$ degree of freedom. The 5% critical value is 3.84, so $J = 0.589$ is well below 3.84.
+
+The correct $p$-value is:
+
+```{r}
+1 - pchisq(0.5892 , df = 1)
+```
+
+
+**Verification using `fitstat` from `fixest`:**
+
+```{r}
+fitstat(iv_labsup_twins_over, "sargan")
+```
+
+Thus, **we do not reject** the null hypothesis that the instruments are jointly exogenous. The caveat discussed for Card nevertheless still applies (see "Asymmetry of the test").
