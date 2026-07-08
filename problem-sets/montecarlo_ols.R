@@ -1,66 +1,66 @@
 # ============================================================
-# CLT per OLS — Simulazione Monte Carlo
+# CLT for OLS — Monte Carlo Simulation
 # ============================================================
 #
-# Obiettivo: mostrare che β̂₁ si distribuisce normalmente
-# anche quando gli errori NON sono normali.
+# Goal: show that β̂₁ is normally distributed
+# even when the errors are NOT normal.
 #
-# Il model vero è:  y = 2 + 3x + u
-# dove u segue una distribuzione esponenziale centrata
-# (fortemente asimmetrica, non normale).
+# The true model is:  y = 2 + 3x + u
+# where u follows a centered exponential distribution
+# (strongly skewed, not normal).
 #
-# Ripetiamo la estimate OLS n_sim volte su campioni diversi,
-# salviamo ogni β̂₁, e poi guardiamo la distribuzione:
-# grazie al Teorema del Limite Centrale, sarà normale.
+# We repeat the OLS estimation n_sim times on different samples,
+# save each β̂₁, and then look at the distribution:
+# thanks to the Central Limit Theorem, it will be normal.
 # ============================================================
 
 library(fixest)
 
 set.seed(1234)
 
-# --- Parametri della simulazione ---
-beta0 <- 2              # vera intercept
-beta1 <- 3              # vero coefficient (quello che ci interessa)
+# --- Simulation parameters ---
+beta0 <- 2              # true intercept
+beta1 <- 3              # true coefficient (the one we care about)
 n     <- 300            # observations per sample
-n_sim <- 10000          # quante volte ripetiamo l'esperimento
+n_sim <- 10000          # how many times we repeat the experiment
 
-# --- Vettore dove salviamo i β̂₁ ---
+# --- Vector where we store the β̂₁ values ---
 beta1_hat <- numeric(n_sim)
 
-# --- Simulazione ---
+# --- Simulation ---
 for (i in 1:n_sim) {
 
-  # 1. Generiamo x (regressore, fisso)
+  # 1. Generate x (regressor, fixed)
   x <- 1 + 4 * runif(n)
 
-  # 2. Generiamo gli errori: esponenziale centrata (media = 0, ma asimmetrica!)
-  #    rexp(n) ha media 1, quindi sottraiamo 1 per centrare a zero
-  #    u <- runif(n, -1, 1) sarebbe uniforme
+  # 2. Generate the errors: centered exponential (mean = 0, but skewed!)
+  #    rexp(n) has mean 1, so we subtract 1 to center it at zero
+  #    u <- runif(n, -1, 1) would be uniform
   u <- rexp(n) - 1
 
-  # 3. Generiamo y dal model vero
+  # 3. Generate y from the true model
   y <- beta0 + beta1 * x + u
 
-  # 4. Stimiamo OLS con feols
+  # 4. Estimate OLS with feols
   dat <- data.frame(y = y, x = x)
   fit <- feols(y ~ x, data = dat)
 
-  # 5. Salviamo β̂₁ (secondo coefficient)
+  # 5. Store β̂₁ (second coefficient)
   beta1_hat[i] <- coef(fit)["x"]
 }
 
 
-# --- Statistiche descrittive ---
+# --- Descriptive statistics ---
 cat("─────────────────────────────────\n")
-cat("  n =", n, ",  n_sim =", n_sim, "simulazioni\n")
+cat("  n =", n, ",  n_sim =", n_sim, "simulations\n")
 cat("─────────────────────────────────\n")
-cat("  Media  β̂₁  =", round(mean(beta1_hat), 4), "  (vero:", beta1, ")\n")
+cat("  Mean   β̂₁  =", round(mean(beta1_hat), 4), "  (true:", beta1, ")\n")
 cat("  Std    β̂₁  =", round(sd(beta1_hat), 4), "\n")
 cat("  Skewness   =", round(mean(((beta1_hat - mean(beta1_hat)) / sd(beta1_hat))^3), 4),
-    "  (→ 0 se CLT funziona)\n")
+    "  (→ 0 if the CLT works)\n")
 cat("─────────────────────────────────\n")
 
-# --- Istogramma + curva normale teorica (ggplot2) ---
+# --- Histogram + theoretical normal curve (ggplot2) ---
 library(ggplot2)
 
 ggplot(data.frame(b = beta1_hat), aes(x = b)) +
@@ -70,10 +70,9 @@ ggplot(data.frame(b = beta1_hat), aes(x = b)) +
                 args = list(mean = mean(beta1_hat), sd = sd(beta1_hat)),
                 color = "red", linewidth = 1) +
   geom_vline(xintercept = beta1, linetype = "dashed") +
-  labs(title = paste0("CLT in azione: distribuzione di β̂₁  (n = ", n, ", n_sim = ", n_sim, ")"),
+  labs(title = paste0("The CLT in action: distribution of β̂₁  (n = ", n, ", n_sim = ", n_sim, ")"),
        x = expression(hat(beta)[1]),
-       y = "Densità") +
+       y = "Density") +
   theme_minimal()
-
 
 

@@ -12,9 +12,9 @@ format:
     toc: true
     toc-depth: 3
     toc-title: "Contents"
-    toc-location: right       
+    toc-location: right
     number-sections: true
-    
+
     # Code
     code-fold: false
     code-tools: true
@@ -22,10 +22,10 @@ format:
     code-block-bg: true
     code-block-border-left: false
     highlight-style: github
-    
+
     # Output
     embed-resources: true
-    
+
     # Typography
     fontsize: 1.1em
     linestretch: 1.6
@@ -46,18 +46,18 @@ knitr:
 
 ## Introduction
 
-### Dati
+### Data
 
-I data utilizzati in questa tutorial come froml **Current Population  Survey Annual Social and Economic Supplement (CPS-ASEC)** per l'anno 2024, estratti tramite IPUMS CPS [Flood et al., 2025]. Il sample utilizzato è una sottoselezione di 2000 observations di lavoratori in età lavorativa (16-65 anni) con redditi da lavoro positivi.
+The data used in this tutorial come from the **Current Population Survey Annual Social and Economic Supplement (CPS-ASEC)** for the year 2024, extracted via IPUMS CPS [Flood et al., 2025]. The sample is a subselection of 2000 observations of working-age workers (16-65 years old) with positive labor income.
 
-I microdata IPUMS sono soggetti a licenza d'uso e non vengono ridistribuiti. Studenti interessati a replicare le analisi possono registrarsi gratuitamente su <https://cps.ipums.org/> e scaricare un estratto analogo.
+The IPUMS microdata are subject to a use license and are not redistributed. Students interested in replicating the analyses can register for free at <https://cps.ipums.org/> and download a similar extract.
 
-**Citazione completa**:
+**Full citation**:
 
-> Sarah Flood, Miriam King, Renae Rodgers, Steven Ruggles, J. Robert Warren, 
-> Daniel Backman, Etienne Breton, Grace Cooper, Julia A. Rivera Drew, 
-> Stephanie Richards, David Van Riper, and Kari C.W. Williams. *IPUMS CPS: 
-> Version 13.0* [dataset]. Minneapolis, MN: IPUMS, 2025. 
+> Sarah Flood, Miriam King, Renae Rodgers, Steven Ruggles, J. Robert Warren,
+> Daniel Backman, Etienne Breton, Grace Cooper, Julia A. Rivera Drew,
+> Stephanie Richards, David Van Riper, and Kari C.W. Williams. *IPUMS CPS:
+> Version 13.0* [dataset]. Minneapolis, MN: IPUMS, 2025.
 > <https://doi.org/10.18128/D030.V13.0>
 
 
@@ -85,20 +85,20 @@ data("wage1", package = "wooldridge")
 
 
 
-## Esercizio 2
+## Exercise 2
 
-Consideriamo i data in `wage2`
+Consider the data in `wage2`
 
 ```{r}
 data("wage2", package = "wooldridge")
 ```
 
 
-- $wage$ sono le retribuzioni mensili
-- $educ$ sono gli anni di istruzioni
-- $exper$ anni di experience
+- $wage$: monthly earnings
+- $educ$: years of education
+- $exper$: years of experience
 
-Stimiamo le seguente regressioni:
+We estimate the following regressions:
 
 ```{r}
 reg_wage1 <- feols(wage ~ educ + exper + tenure, data = wage2, vcov = "hetero")
@@ -109,18 +109,18 @@ modelsummary(list("Wage" = reg_wage1, "Log Wage" = reg_logwage1), gof_omit = "AI
 
 
 ::: {.callout-note title="Questions"}
-1. Come si interpretano i coefficients di $educ$ nelle due regressioni?
-2. I coefficients sono statisticamente significativi al 5%? (Calcolare anche l'intervallo di confidenza al 95%)
-3. Wald test (statistica F robusta all'heteroskedasticity) che tutti i coefficients della regressione siano uguali a zero
+1. How should the coefficients on $educ$ in the two regressions be interpreted?
+2. Are the coefficients statistically significant at the 5% level? (Also compute the 95% confidence interval)
+3. Wald test (heteroskedasticity-robust F statistic) that all the regression coefficients are equal to zero
 :::
 
 
 
 
 
-### Istruzione dei genitori: dataset `wage2`
+### Parental education: dataset `wage2`
 
-Usiamo il dataset `wage2` considerando $pareduc$ che rappresenta la somma degli years of education dei genitori. $wage$ in `wage2` è il wage espresso in dollari mensili:
+We use the `wage2` dataset, considering $pareduc$, which represents the sum of the parents' years of education. $wage$ in `wage2` is the wage expressed in monthly dollars:
 
 ```{r}
 wage2 <- wage2 %>%
@@ -136,7 +136,7 @@ modelsummary(list("Wage " = regeduc_int, "Log Wage " = regeduc_intlog), gof_omit
 
 
 
-## Deviazione dalla media
+## Deviation from the Mean
 
 
 
@@ -150,7 +150,7 @@ wage2 <- wage2 %>%
 ```
 
 
-Confronto con la precedente regressione:
+Comparison with the previous regression:
 
 ```{r}
 regeduc_int <- feols(wage ~ educ*pareduc + exper + tenure, data = wage2, vcov = "hetero")
@@ -169,17 +169,17 @@ modelsummary(list("Wage " = regeduc_int, "Wage " = regeduc_int_mean), gof_omit =
 
 
 
-**Riferimenti**
+**References**
 
-**Fonte dei data**: I data utilizzati come froml CPS ASEC 2024, 
-estratti tramite IPUMS CPS:
+**Data source**: The data used come from the CPS ASEC 2024,
+extracted via IPUMS CPS:
 
-Flood, S., King, M., Rodgers, R., Ruggles, S., Warren, J. R., Backman, D., 
-Breton, E., Cooper, G., Rivera Drew, J. A., Richards, S., Van Riper, D., 
-& Williams, K. C. W. (2025). *IPUMS CPS: Version 13.0* [dataset]. 
+Flood, S., King, M., Rodgers, R., Ruggles, S., Warren, J. R., Backman, D.,
+Breton, E., Cooper, G., Rivera Drew, J. A., Richards, S., Van Riper, D.,
+& Williams, K. C. W. (2025). *IPUMS CPS: Version 13.0* [dataset].
 IPUMS. <https://doi.org/10.18128/D030.V13.0>
 
-I microdata non vengono ridistribuiti ai sensi della licenza IPUMS. 
-Per replicare le analisi, registrarsi su <https://cps.ipums.org/>.
+The microdata are not redistributed, in accordance with the IPUMS license.
+To replicate the analyses, register at <https://cps.ipums.org/>.
 
 

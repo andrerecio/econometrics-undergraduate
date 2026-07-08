@@ -1,7 +1,7 @@
 ---
-title: "Introduction a R"
-subtitle: "Regressione 📉"
-author: "Econometria"
+title: "Introduction to R"
+subtitle: "Regression with fixest 📉"
+author: "Econometrics"
 date: today
 lang: en
 
@@ -12,7 +12,7 @@ format:
     highlight-style: github
     code-line-numbers: false
     transition: none
-    footer: "Econometria — Sapienza Università di Roma"
+    footer: "Econometrics — Sapienza University of Rome"
     embed-resources: true
     width: 1280
     height: 720
@@ -54,9 +54,9 @@ library(modelsummary)
 data("wage1", package = "wooldridge")
 ```
 
-- `wooldridge` — libreria con dataset
-- `fixest` — regressione linear con standard errors robusti
-- `modelsummary` — tabelle di regressione
+- `wooldridge` — library with datasets
+- `fixest` — linear regression with robust standard errors
+- `modelsummary` — regression tables
 
 ---
 
@@ -66,15 +66,15 @@ data("wage1", package = "wooldridge")
 head(wage1)
 ```
 
-Variabili che useremo:
+Variables we will use:
 
-- `wage` — retribuzione oraria media (dollari, 1976)
+- `wage` — average hourly earnings (dollars, 1976)
 - `educ` — years of education
 
 
 ---
 
-## 📊 Statistiche descrittive
+## 📊 Descriptive statistics
 
 ```{r}
 wage1 |>
@@ -96,46 +96,46 @@ wage1 |>
 #| fig-width: 6
 #| fig-height: 4
 
-# Distribuzione del hourly wage
+# Distribution of hourly wage
 ggplot(wage1, aes(x = wage)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 20) +
-  labs(title = "Distribuzione del hourly wage",
-        x = "Salario orario (dollari)", y = "Frequenza") +
+  labs(title = "Distribution of hourly wage",
+        x = "Hourly wage (dollars)", y = "Frequency") +
   theme_minimal(base_size = 13)
 
-# Distribuzione degli years of education
+# Distribution of years of education
 ggplot(wage1, aes(x = educ)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 20) +
-  labs(title = "Distribuzione degli years of education", 
-       x = "Anni di education", y = "Frequenza") +
+  labs(title = "Distribution of years of education",
+       x = "Years of education", y = "Frequency") +
   theme_minimal(base_size = 13)
 ```
 
 
 ---
 
-## 🔍 Relazione tra wage ed educ
+## 🔍 Relationship between wage and educ
 
-- `method = "lm"` — aggiunge una linea di regressione linear
+- `method = "lm"` — adds a linear regression line
 
 ```{r}
 #| output-location: slide
-ggplot(wage1, aes(y = wage, x = educ)) + 
-  geom_point(color = "black", alpha = 0.4) + 
+ggplot(wage1, aes(y = wage, x = educ)) +
+  geom_point(color = "black", alpha = 0.4) +
   geom_smooth(method = "lm", color = "blue", se = FALSE) +
-  labs(x = "Anni di education", 
-       y = "Salario orario (dollari)") +
+  labs(x = "Years of education",
+       y = "Hourly wage (dollars)") +
   theme_minimal(base_size = 13)
-```  
+```
 
 
 
 ---
 
 
-## 📉 Regressione — model linear semplice
+## 📉 Regression — simple linear model
 
-Stimiamo il model di simple linear regression:
+We estimate the simple linear regression model:
 
 $$wage_i = \beta_0 + \beta_1 \, educ_i + u_i$$
 
@@ -145,15 +145,15 @@ reg1 <- feols(wage ~ educ, data = wage1, vcov = "hetero")
 reg1
 ```
 
-- `vcov = "hetero"` o `vcov = "hc1"` — standard errors robusti
-- comando Stata: `regress wage educ, robust`
+- `vcov = "hetero"` or `vcov = "hc1"` — robust standard errors
+- Stata command: `regress wage educ, robust`
 
 
 ---
 
-## 📉 Regressione — comando `lm` di R
+## 📉 Regression — R's `lm` command
 
-- il comando base per la regressione linear è `lm()`, ma non fornisce standard errors robusti (serve `vcovHC()` del pacchetto `sandwich`)
+- the base command for linear regression is `lm()`, but it does not provide robust standard errors (you need `vcovHC()` from the `sandwich` package)
 
 ```{r}
 reg_lm <- lm(wage ~ educ, data = wage1)
@@ -162,10 +162,10 @@ summary(reg_lm)
 
 ---
 
-## 📋 Table della regressione
+## 📋 Regression table
 
 - dependent variable: `wage`
-- standard errors robusti in parentesi
+- robust standard errors in parentheses
 
 ::: {style="font-size: 0.85em"}
 ```{r}
@@ -178,11 +178,11 @@ modelsummary(list("wage" = reg1),gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
 
 
-## 📋 Table della regressione
+## 📋 Regression table
 
-Il coefficient di $educ$ rappresenta l’incremento medio del hourly wage associato ad an additional year di education:
+The coefficient on $educ$ represents the average increase in hourly wage associated with an additional year of education:
 
-- An additional year di education è **associato** a un increase medio del hourly wage di circa 0.54 dollari
+- An additional year of education is **associated** with an average increase in hourly wage of approximately 0.54 dollars
 
 
-L'intercept ($\beta_0$) rappresenta il hourly wage medio predetto per un individuo con zero years of education
+The intercept ($\beta_0$) represents the predicted average hourly wage for an individual with zero years of education

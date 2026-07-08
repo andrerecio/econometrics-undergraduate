@@ -1,7 +1,7 @@
 ---
-title: "Esercitazioni di Econometria"
-subtitle: "Introduction a R"
-author: "Econometria"
+title: "Econometrics Tutorials"
+subtitle: "Introduction to R"
+author: "Econometrics"
 date: today
 lang: en
 
@@ -12,7 +12,7 @@ format:
     highlight-style: github
     code-line-numbers: false
     transition: none
-    footer: "Econometria — Sapienza Università di Roma"
+    footer: "Econometrics — Sapienza University of Rome"
     embed-resources: true
     width: 1280
     height: 720
@@ -39,89 +39,89 @@ library(wooldridge)
 
 
 
-## Informazioni {.center}
+## Information {.center}
 
-- **Materiale:** disponibile su [GitHub](https://andrerecio.github.io/econometrics-undergraduate/) e Moodle
-- **Orari:** Calendario su Moodle e sito di Facoltà — eventuali variazioni saranno comunicate su Moodle
-- **Contatto:** [andrea.recine@uniroma1.it](mailto:andrea.recine@uniroma1.it)
-
----
-
-## Cosa faremo?
-
-Imparare a **interpretare i risultati delle regressioni**
-
-- L'output delle regressioni è parte importante della prova scritta
-- La prova orale richiede una buona comprensione teorica
+- **Materials:** available on [GitHub](https://andrerecio.github.io/econometrics-undergraduate/) and Moodle
+- **Schedule:** Calendar on Moodle and the Faculty website — any changes will be announced on Moodle
+- **Contact:** [andrea.recine@uniroma1.it](mailto:andrea.recine@uniroma1.it)
 
 ---
 
-## Cosa potete fare?
+## What will we do?
 
-Sfruttare le esercitazioni per imparare a usare R, manipolare i data, costruire grafici e interpretare i risultati
+Learn to **interpret regression results**
+
+- Regression output is an important part of the written exam
+- The oral exam requires a good theoretical understanding
+
+---
+
+## What can you do?
+
+Use the tutorials to learn how to use R, manipulate data, build graphs, and interpret results
 
 > *"Data scientists spend 50-80% of their time collecting and preparing data, before it can be explored for useful nuggets."* — [NYT, 2014](https://www.nytimes.com/2014/08/18/technology/for-big-data-scientists-hurdle-to-insights-is-janitor-work.html)
 
 
-Oggi con LLMs cosa cambia?
+What changes today with LLMs?
 
-Divertitevi a sperimentare con il codice
+Have fun experimenting with the code
 
 
 ---
 
 
-## Programmazione
+## Programming
 
-Linguaggi di programmazione:
+Programming languages:
 
-- più diffusi open source: R, Python e Julia
-- più diffusi commerciali: Stata e Matlab
+- most popular open source: R, Python, and Julia
+- most popular commercial: Stata and Matlab
 
 
-Python è sempre più richiesto nel mercato del lavoro. R ha una comunità molto attiva in ambito accademico (e molti pacchetti per l'econometria)
+Python is increasingly in demand in the job market. R has a very active community in academia (and many packages for econometrics)
 
 ---
 
 ## R
 
-Tutto il materiale è scritto in **R**:
+All the material is written in **R**:
 
-- [R](https://cran.r-project.org/) — linguaggio di programmazione
-- [RStudio](https://posit.co/download/rstudio-desktop/) — è un ambiente di sviluppo integrato (IDE) 
+- [R](https://cran.r-project.org/) — programming language
+- [RStudio](https://posit.co/download/rstudio-desktop/) — an integrated development environment (IDE)
 
-Potete usare anche altri IDE come [VSCode](https://code.visualstudio.com/)
+You can also use other IDEs, such as [VSCode](https://code.visualstudio.com/)
 
-I materiali e le slide sono prodotti con [Quarto](https://quarto.org/)
-
----
-
-
-
-## Installare R e RStudio
-
-- Scaricate R da [CRAN](https://cran.r-project.org/)
-- Scaricate RStudio da [RStudio](https://posit.co/download/rstudio-desktop/)
-- Seguite le istruzioni di installazione per il vostro sistema operativo
+The materials and slides are produced with [Quarto](https://quarto.org/)
 
 ---
 
-## Struttura delle esercitazioni {.center}
-
-Ogni tutorial è composta da:
-
-- File **HTML** — materiale di riferimento con codice e spiegazioni
-- **Script `.R`** — codice che potete eseguire (**run!**) se volete esercitarvi
 
 
-Su [GitHub](https://andrerecio.github.io/econometrics-undergraduate/) trovate entrambi i file: HTML e script R.
+## Installing R and RStudio
+
+- Download R from [CRAN](https://cran.r-project.org/)
+- Download RStudio from [RStudio](https://posit.co/download/rstudio-desktop/)
+- Follow the installation instructions for your operating system
+
+---
+
+## Tutorial Structure {.center}
+
+Each tutorial consists of:
+
+- **HTML** file — reference material with code and explanations
+- **`.R` script** — code you can execute (**run!**) if you want to practice
+
+
+On [GitHub](https://andrerecio.github.io/econometrics-undergraduate/) you can find both files: HTML and R script.
 
 
 ---
 
-## 📖 Le esercitazioni {.center}
+## 📖 The Tutorials {.center}
 
-Le spiegazioni nei file **HTML** possono aiutarvi a capire meglio i risultati delle regressioni, ma per superare l'esame dovete anche studiare la teoria 
+The explanations in the **HTML** files can help you better understand regression results, but to pass the exam you must also study the theory
 
 
 ## RStudio layout
@@ -132,22 +132,22 @@ Le spiegazioni nei file **HTML** possono aiutarvi a capire meglio i risultati de
 
 ## 📝 Task 1
 
-- Aprire un nuovo script: `File > New File > R Script`
-- Eseguite il seguente codice (Ctrl + Invio o Cmd + Invio o Run)
+- Open a new script: `File > New File > R Script`
+- Run the following code (Ctrl + Enter or Cmd + Enter or Run)
 
 ```{r}
 #| output-location: column
 x <- 1:10
-y <- x^2 
+y <- x^2
 plot(x, y)
 ```
 
 
 ---
 
-## 📦 Pacchetti R
+## 📦 R Packages
 
-- Installare e caricare i pacchetti necessari:
+- Install and load the required packages:
 
 ```{r}
 #| eval: false
@@ -157,37 +157,37 @@ library(tidyverse)
 library(wooldridge)
 ```
 
-- Non è necessario installare i pacchetti ogni volta, basta caricarli con `library()`
+- You do not need to install the packages every time; just load them with `library()`
 
 ---
 
 
 ## 🌐 Tidyverse
 
-`tidyverse` è una raccolta di pacchetti R per analisi dei data:
+`tidyverse` is a collection of R packages for data analysis:
 
-- `dplyr` — manipolare i data
-- `ggplot2` — grafici
-- `tidyr` — riorganizzare i data
-- `readr` — importare CSV e altri file
+- `dplyr` — data manipulation
+- `ggplot2` — graphs
+- `tidyr` — data reshaping
+- `readr` — importing CSV and other files
 
 ::: {.callout-tip}
-Potete caricare i pacchetti singolarmente: `library(ggplot2)`, `library(dplyr)` oppure tutti insieme con `library(tidyverse)`
+You can load the packages individually: `library(ggplot2)`, `library(dplyr)`, or all at once with `library(tidyverse)`
 :::
 
 
 
-## 🗂️ Dataset
+## 🗂️ Datasets
 
-- I dataset in R sono organizzati in **dataframe** (tabelle con righe e colonne)
+- Datasets in R are organized in **dataframes** (tables with rows and columns)
 
-- `library(tidyverse)` usa il formato tibble, una versione migliorata di dataframe
+- `library(tidyverse)` uses the tibble format, an improved version of the dataframe
 
 
 ---
 
 
-## 🗂️ Dataset: `wage1` 
+## 🗂️ Dataset: `wage1`
 ```{r}
 data("wage1", package = "wooldridge")
 str(wage1)
@@ -196,41 +196,41 @@ str(wage1)
 ---
 
 
-## 🧹 Tidying — manipolare i data: `dplyr`
+## 🧹 Tidying — data manipulation: `dplyr`
 
 
 
-1. `filter()`: seleziona observations in base a una condizione
-2. `arrange()`: riordina le righe
-3. `select()`: seleziona variabili per nome
-4. `mutate()`: crea nuove variabili a partire da quelle esistenti
-5. `summarise()`: riduce i data a un unico riepilogo
-6. `group_by()`: applica le funzioni precedenti a gruppi anziché all'intero dataset
+1. `filter()`: selects observations based on a condition
+2. `arrange()`: reorders rows
+3. `select()`: selects variables by name
+4. `mutate()`: creates new variables from existing ones
+5. `summarise()`: reduces the data to a single summary
+6. `group_by()`: applies the previous functions to groups rather than to the entire dataset
 
 
 ---
 
 
 
-## 🧹 Tidying — manipolare i data
+## 🧹 Tidying — data manipulation
 
-Creiamo un nuovo dataset: solo chi ha più di 12 years of education:
+Let us create a new dataset: only individuals with more than 12 years of education:
 
 ```{r}
 wage_educ_higher <- wage1 |>
                    filter(educ > 12)
-head(wage_educ_higher)                   
+head(wage_educ_higher)
 
 ```
 
 
-- `|>` o `%>%` è l'operatore **pipe**: passa l'output di un'espressione come input della function successiva, concatenando più operazioni
+- `|>` or `%>%` is the **pipe** operator: it passes the output of one expression as the input of the next function, chaining multiple operations
 
 ---
 
 
 
-## 📊 Summarising — statistiche descrittive
+## 📊 Summarising — descriptive statistics
 
 ```{r}
 wage1 |>
@@ -244,31 +244,31 @@ wage1 |>
 
 ---
 
-## 📐 Intervallo di confidenza per la media
+## 📐 Confidence interval for the mean
 
 $$\bar{x} \pm t_{\alpha/2, \, n-1} \cdot \frac{s}{\sqrt{n}}$$
 ```{r}
-# calcolo "manuale" per wage 
-n    <- length(wage1$wage) # numero di observations
-xbar <- mean(wage1$wage) # media campionaria di wage
-s    <- sd(wage1$wage) # deviazione standard campionaria di wage
-se   <- s / sqrt(n) # standard error della media
+# "manual" computation for wage
+n    <- length(wage1$wage) # number of observations
+xbar <- mean(wage1$wage) # sample mean of wage
+s    <- sd(wage1$wage) # sample standard deviation of wage
+se   <- s / sqrt(n) # standard error of the mean
 
-t_crit   <- qt(0.975, df = n - 1) # uguale a circa 1.96 (ricordatelo!)
+t_crit   <- qt(0.975, df = n - 1) # approximately equal to 1.96 (remember it!)
 
-ci_lower <- xbar - t_crit * se # limite inferiore
-ci_upper <- xbar + t_crit * se # limite superiore
+ci_lower <- xbar - t_crit * se # lower bound
+ci_upper <- xbar + t_crit * se # upper bound
 
-c(media = xbar, lower = ci_lower, upper = ci_upper)
+c(mean = xbar, lower = ci_lower, upper = ci_upper)
 
 
 ```
 
 
-## 📐 Intervallo di confidenza per la media
+## 📐 Confidence interval for the mean
 
 ```{r}
-# usando il comando t.test()
+# using the t.test() command
 t.test(wage1$wage)
 ```
 
@@ -277,9 +277,9 @@ t.test(wage1$wage)
 
 
 
-## 📊 Summarising — per gruppi
+## 📊 Summarising — by group
 
-`group_by()` calcola le statistiche separatamente per ogni gruppo:
+`group_by()` computes the statistics separately for each group:
 
 ```{r}
 wagediff <- wage1 |>
@@ -289,32 +289,32 @@ wagediff <- wage1 |>
     wage_sd   = sd(wage),
     n         = n()
   )
-wagediff  
+wagediff
 ```
 
 - `female = 0` → men, `female = 1` → women
-- `n()` conta le observations per gruppo
+- `n()` counts the observations in each group
 
 ---
 
 
-## 📐 Testare la differenza tra medie
+## 📐 Testing the difference in means
 
 
 $$H_0: \mu_{men} - \mu_{women} = 0 \qquad H_1: \mu_{men} - \mu_{women} \neq 0$$
 
-La statistica test:
+The test statistic:
 
 $$t = \frac{\bar{Y}_{men} - \bar{Y}_{women}}{SE(\bar{Y}_{men} - \bar{Y}_{women})} \qquad SE = \sqrt{\frac{s^2_{men}}{n_{men}} + \frac{s^2_{women}}{n_{women}}}$$
 
 
-- $|t|$ > 1.96 → we reject $H_0$ al 5%
+- $|t|$ > 1.96 → we reject $H_0$ at the 5% level
 
 
 
 ---
 
-## 📐 Testare la differenza tra medie
+## 📐 Testing the difference in means
 
 
 ```{r}
@@ -328,23 +328,23 @@ t_stat
 
 ---
 
-## 📈 Visualising — distribuzione
+## 📈 Visualising — distribution
 
-- ggplot2 è un pacchetto per creare grafici personalizzati basato sulla grammatica dei grafici (_gg_)
+- ggplot2 is a package for creating customized graphs based on the grammar of graphics (_gg_)
 
 ```{r}
 #| output-location: slide
 ggplot(wage1, aes(x = wage)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 20) +
-  labs(title = "Distribuzione del hourly wage",
-       x = "Salario orario (dollari)", y = "Frequenza") +
+  labs(title = "Distribution of hourly wage",
+       x = "Hourly wage (dollars)", y = "Frequency") +
   theme_minimal(base_size = 15)
 ```
 
 ---
 
 
-## 🚔 Data: polizia e crimine
+## 🚔 Data: police and crime
 
 ```{r}
 url_data <- "https://raw.githubusercontent.com/andrerecio/econometrics-undergraduate/main/introduction/crime2_clean.csv"
@@ -353,20 +353,20 @@ crime <- read_csv(url_data, show_col_types = FALSE, na = ".")
 glimpse(crime)
 ```
 
-- [Codebook](https://github.com/andrerecio/econometrics-undergraduate/blob/main/introduction/codebook_crime2.md) con le variabili
+- [Codebook](https://github.com/andrerecio/econometrics-undergraduate/blob/main/introduction/codebook_crime2.md) with the variables
 
 
-## 👮 Polizia e crimine
+## 👮 Police and crime
 
 
-- Creiamo due nuove variabili: `violent` (crimini violenti per 100.000 abitanti) e `police` (poliziotti per 100.000 abitanti) per alcuni anni
+- We create two new variables: `violent` (violent crimes per 100,000 inhabitants) and `police` (police officers per 100,000 inhabitants) for selected years
 
-- Visualizziamo la relazione tra polizia e crimine violento
+- We visualize the relationship between police and violent crime
 
 ```{r}
 #| output-location: slide
 crime_sub <- crime |>
-  filter(year == 1991) |> # solo nel 1991
+  filter(year == 1991) |> # 1991 only
   mutate(
     violent = (murder + rape + robbery + assault) / citypop * 100000,
     police  = sworn / citypop * 100000
@@ -376,37 +376,37 @@ crime_sub <- crime |>
 ggplot(crime_sub, aes(x = police, y = violent)) +
   geom_point(alpha = 0.8) +
   labs(
-    x = "Poliziotti per 100.000 abitanti",
-    y = "Crimini violenti per 100.000 abitanti"
+    x = "Police officers per 100,000 inhabitants",
+    y = "Violent crimes per 100,000 inhabitants"
   ) +
   theme_minimal(base_size = 20)
 ```
 
 
-##  🔍 Polizia e crimine
+##  🔍 Police and crime
 
-- La figure mostra una correlazione **positiva** tra polizia e crimine: più polizia, più crimine?
+- The figure shows a **positive** correlation between police and crime: more police, more crime?
 
-- In realtà, le città con più crimine assumono più poliziotti — è il crimine a causare più polizia, non il contrario
+- In reality, cities with more crime hire more police officers — it is crime that causes more police, not the other way around
 
 
 
-## 📏 Covarianza e correlazione
+## 📏 Covariance and correlation
 ```{r}
-# covarianza
+# covariance
 cov(crime_sub$police, crime_sub$violent)
 
-# correlazione
+# correlation
 cor(crime_sub$police, crime_sub$violent)
 ```
 
-- La **covarianza** misura l'associazione linear tra due variabili
+- The **covariance** measures the linear association between two variables
 
-- La **correlazione** è la covarianza standardizzata, compresa tra -1 e 1
+- The **correlation** is the standardized covariance, ranging between -1 and 1
 
 ---
 
-## 📏 Covarianza
+## 📏 Covariance
 
 $$\text{Cov}(X, Y) = \frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar{x})(y_i - \bar{y})$$
 ```{r}
@@ -416,20 +416,19 @@ y <- crime_sub$violent
 cov_manual <- sum((x - mean(x)) * (y - mean(y))) / (length(x) - 1)
 cor_manual <- cov_manual / (sd(x) * sd(y))
 
-c(covarianza = round(cov_manual, 2))
-c(correlazione = round(cor_manual, 6))
+c(covariance = round(cov_manual, 2))
+c(correlation = round(cor_manual, 6))
 ```
 
 
 
 
-## Letture utili
+## Useful Readings
 
 
-- [R for Data Science](https://r4ds.had.co.nz/transform.html) 
+- [R for Data Science](https://r4ds.had.co.nz/transform.html)
 - [ModernDive](https://moderndive.com/1-getting-started.html)
 
 ---
-
 
 

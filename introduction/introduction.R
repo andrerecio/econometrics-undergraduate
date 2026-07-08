@@ -1,22 +1,22 @@
 # ==============================================================================
-# Esercitazioni di Econometria — Introduction a R
-# Sapienza Università di Roma
+# Econometrics Tutorials — Introduction to R
+# Sapienza University of Rome
 # ==============================================================================
 
-# --- Installazione pacchetti (solo la prima volta) ----------------------------
+# --- Installing packages (first time only) ------------------------------------
 
 install.packages("tidyverse")
 install.packages("wooldridge")
 #install.packages("ggplot2")
 #install.packages("dplyr")
 
-# --- Caricare i pacchetti -----------------------------------------------------
+# --- Loading packages ----------------------------------------------------------
 
 library(tidyverse)
 library(wooldridge)
 
 # ==============================================================================
-# 1. Primi passi
+# 1. First steps
 # ==============================================================================
 
 x <- 1:10
@@ -31,17 +31,17 @@ data("wage1", package = "wooldridge")
 str(wage1)
 
 # ==============================================================================
-# 3. Manipolare i data con dplyr
+# 3. Data manipulation with dplyr
 # ==============================================================================
 
-# Filtriamo le observations con più di 12 years of education
+# Filter observations with more than 12 years of education
 wage_educ_higher <- wage1 |>
   filter(educ > 12)
 
 head(wage_educ_higher)
 
 # ==============================================================================
-# 4. Statistiche descrittive
+# 4. Descriptive statistics
 # ==============================================================================
 
 wage1 |>
@@ -52,7 +52,7 @@ wage1 |>
     educ_mean   = mean(educ)
   )
 
-# --- Per gruppi ---------------------------------------------------------------
+# --- By group -------------------------------------------------------------------
 
 # female = 0 → men, female = 1 → women
 wage1 |>
@@ -64,80 +64,80 @@ wage1 |>
   )
 
 # ==============================================================================
-# 5. Intervallo di confidenza per la media
+# 5. Confidence interval for the mean
 # ==============================================================================
 
-# --- Calcolo a mano -----------------------------------------------------------
+# --- Manual computation ---------------------------------------------------------
 
 n    <- length(wage1$wage)
 xbar <- mean(wage1$wage)
 s    <- sd(wage1$wage)
 se   <- s / sqrt(n)
 
-t_crit   <- qt(0.975, df = n - 1)  # uguale a circa 1.96
+t_crit   <- qt(0.975, df = n - 1)  # approximately equal to 1.96
 
 ci_lower <- xbar - t_crit * se
 ci_upper <- xbar + t_crit * se
 
-c(media = xbar, lower = ci_lower, upper = ci_upper)
+c(mean = xbar, lower = ci_lower, upper = ci_upper)
 
-# --- Verifica con t.test() ----------------------------------------------------
+# --- Check with t.test() --------------------------------------------------------
 
 t.test(wage1$wage)
 
 
-# --- Verifica della differenza tra medie --------------------------------------
+# --- Testing the difference in means --------------------------------------------
 
-# Statistiche descrittive per gruppo
+# Descriptive statistics by group
 # female = 0 → men, female = 1 → women
 wagediff <- wage1 |>
   group_by(female) |>
   summarise(
-    wage_mean = mean(wage),  # media wagesale per gruppo
-    wage_sd   = sd(wage),    # deviazione standard per gruppo
-    n         = n()          # numerosità per gruppo
+    wage_mean = mean(wage),  # mean wage by group
+    wage_sd   = sd(wage),    # standard deviation by group
+    n         = n()          # group size
   )
 wagediff
 
-# Errore standard della differenza tra medie
+# Standard error of the difference in means
 # SE = sqrt(s1^2/n1 + s2^2/n2)
 se <- sqrt(wagediff$wage_sd[1]^2 / wagediff$n[1] +
              wagediff$wage_sd[2]^2 / wagediff$n[2])
 
-# Statistica t: (media_men - media_women) / SE
+# t statistic: (mean_men - mean_women) / SE
 # H0: mu_men - mu_women = 0
 # H1: mu_men - mu_women ≠ 0
 t_stat <- (wagediff$wage_mean[1] - wagediff$wage_mean[2]) / se
 t_stat
 
-# Rifiutiamo H0 al 5% se |t| > 1.96
+# We reject H0 at the 5% level if |t| > 1.96
 
 # ==============================================================================
-# 6. Grafici con ggplot2
+# 6. Graphs with ggplot2
 # ==============================================================================
 
-# Distribuzione del hourly wage
+# Distribution of hourly wage
 ggplot(wage1, aes(x = wage)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 20) +
   labs(
-    title = "Distribuzione del hourly wage",
-    x = "Salario orario (dollari)",
-    y = "Frequenza"
+    title = "Distribution of hourly wage",
+    x = "Hourly wage (dollars)",
+    y = "Frequency"
   ) +
   theme_minimal(base_size = 15)
 
 # ==============================================================================
-# 7. Polizia e crimine
+# 7. Police and crime
 # ==============================================================================
 
-# Carichiamo il dataset da GitHub
-# In alternativa, scaricatelo e importatelo con Import Dataset
+# Load the dataset from GitHub
+# Alternatively, download it and import it with Import Dataset
 url_data <- "https://raw.githubusercontent.com/andrerecio/econometrics-undergraduate/main/introduction/crime2_clean.csv"
 
 crime <- read_csv(url_data, show_col_types = FALSE, na = ".")
 glimpse(crime)
 
-# --- Creiamo variabili per 100.000 abitanti -----------------------------------
+# --- Create variables per 100,000 inhabitants -----------------------------------
 
 crime_sub <- crime |>
   filter(year == 1991) |>
@@ -147,26 +147,26 @@ crime_sub <- crime |>
   ) |>
   drop_na(violent, police)
 
-# --- Scatter plot: polizia vs crimine violento --------------------------------
+# --- Scatter plot: police vs violent crime --------------------------------------
 
 ggplot(crime_sub, aes(x = police, y = violent)) +
   geom_point(alpha = 0.8) +
   labs(
-    x = "Poliziotti per 100.000 abitanti",
-    y = "Crimini violenti per 100.000 abitanti"
+    x = "Police officers per 100,000 inhabitants",
+    y = "Violent crimes per 100,000 inhabitants"
   ) +
   theme_minimal(base_size = 20)
 
 # ==============================================================================
-# 8. Covarianza e correlazione
+# 8. Covariance and correlation
 # ==============================================================================
 
-# --- Con le funzioni R --------------------------------------------------------
+# --- Using R functions ----------------------------------------------------------
 
 cov(crime_sub$police, crime_sub$violent)
 cor(crime_sub$police, crime_sub$violent)
 
-# --- Calcolo a mano ----------------------------------------------------------
+# --- Manual computation --------------------------------------------------------
 
 x <- crime_sub$police
 y <- crime_sub$violent
@@ -174,4 +174,4 @@ y <- crime_sub$violent
 cov_manual <- sum((x - mean(x)) * (y - mean(y))) / (length(x) - 1)
 cor_manual <- cov_manual / (sd(x) * sd(y))
 
-c(covarianza = round(cov_manual, 2), correlazione = round(cor_manual, 4))
+c(covariance = round(cov_manual, 2), correlation = round(cor_manual, 4))

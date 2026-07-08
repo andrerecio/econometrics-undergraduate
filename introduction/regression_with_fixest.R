@@ -1,39 +1,39 @@
 # =============================================================================
-# Tutorial 2 — Regressione linear semplice
-# Econometria — Sapienza Università di Roma
+# Regression with fixest — Simple Linear Regression
+# Econometrics — Sapienza University of Rome
 # Dataset: wage1 (Current Population Survey 1976)
 # =============================================================================
 
-# --- Installazione nuove librerie --------------------------------
+# --- Installing new libraries --------------------------------
 
-install.packages("fixest")       # regressione con standard errors robusti
-install.packages("modelsummary") # tabelle di regressione
-
-
-# --- Librerie -----------------------------------------------------------------
-
-library(tidyverse)    # manipolazione data e grafici
-library(wooldridge)   # dataset
-library(fixest)       # regressione con standard errors robusti
-library(modelsummary) # tabelle di regressione
+install.packages("fixest")       # regression with robust standard errors
+install.packages("modelsummary") # regression tables
 
 
-# --- Dati ---------------------------------------------------------------------
+# --- Libraries ------------------------------------------------------------------
+
+library(tidyverse)    # data manipulation and graphs
+library(wooldridge)   # datasets
+library(fixest)       # regression with robust standard errors
+library(modelsummary) # regression tables
+
+
+# --- Data -----------------------------------------------------------------------
 
 data("wage1", package = "wooldridge")
 
 
 # --- Data structure -------------------------------------------------------
 
-# prime 6 righe del dataset
+# first 6 rows of the dataset
 head(wage1)
 
-# variabili principali:
-# wage  — retribuzione oraria media (dollari, 1976)
+# main variables:
+# wage  — average hourly earnings (dollars, 1976)
 # educ  — years of education
 
 
-# --- Statistiche descrittive --------------------------------------------------
+# --- Descriptive statistics ------------------------------------------------------
 
 wage1 |>
   summarise(
@@ -46,57 +46,57 @@ wage1 |>
   )
 
 
-# --- Visualizzazione ----------------------------------------------------------
+# --- Visualization ---------------------------------------------------------------
 
-# Distribuzione del hourly wage
+# Distribution of hourly wage
 ggplot(wage1, aes(x = wage)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 20) +
-  labs(title = "Distribuzione del hourly wage",
-       x = "Salario orario (dollari)", y = "Frequenza") +
+  labs(title = "Distribution of hourly wage",
+       x = "Hourly wage (dollars)", y = "Frequency") +
   theme_minimal(base_size = 13)
 
-# Distribuzione degli years of education
+# Distribution of years of education
 ggplot(wage1, aes(x = educ)) +
   geom_histogram(fill = "lightblue", color = "black", bins = 20) +
-  labs(title = "Distribuzione degli years of education",
-       x = "Anni di education", y = "Frequenza") +
+  labs(title = "Distribution of years of education",
+       x = "Years of education", y = "Frequency") +
   theme_minimal(base_size = 13)
 
-# Scatter plot: relazione tra wage ed educ
-# geom_smooth(method = "lm") aggiunge la line di regressione
+# Scatter plot: relationship between wage and educ
+# geom_smooth(method = "lm") adds the regression line
 ggplot(wage1, aes(y = wage, x = educ)) +
   geom_point(color = "black", alpha = 0.4) +
   geom_smooth(method = "lm", color = "blue", se = FALSE) +
-  labs(x = "Anni di education",
-       y = "Salario orario (dollari)") +
+  labs(x = "Years of education",
+       y = "Hourly wage (dollars)") +
   theme_minimal(base_size = 13)
 
 
-# --- Regressione linear semplice ---------------------------------------------
+# --- Simple linear regression ----------------------------------------------------
 
-# Modello: wage_i = beta0 + beta1 * educ_i + u_i
+# Model: wage_i = beta0 + beta1 * educ_i + u_i
 #
-# feols() di fixest estimate OLS con standard errors robusti
-# vcov = "hetero" (equivalente a "hc1") — robusti all'heteroskedasticity
+# feols() from fixest estimates OLS with robust standard errors
+# vcov = "hetero" (equivalent to "hc1") — robust to heteroskedasticity
 # Stata: regress wage educ, robust
 
 reg1 <- feols(wage ~ educ, data = wage1, vcov = "hetero")
 reg1
 
-# Alternativa con lm() base di R — standard errors omoschedastici
-# Per errori robusti con lm() serve library(sandwich) e vcovHC()
+# Alternative with base R's lm() — homoskedastic standard errors
+# For robust errors with lm() you need library(sandwich) and vcovHC()
 reg_lm <- lm(wage ~ educ, data = wage1)
 summary(reg_lm)
 
 
-# --- Table della regressione ------------------------------------------------
+# --- Regression table -------------------------------------------------------------
 
-# modelsummary() produce una tabella formattata dei risultati
-# gof_omit rimuove le statistiche di fit non necessarie
+# modelsummary() produces a formatted table of the results
+# gof_omit removes unnecessary fit statistics
 modelsummary(list("wage" = reg1), gof_omit = "AIC|BIC|RMSE|R2 Adj.")
 
-# Interpretazione:
-# beta1 = 0.54: an additional year di education is associated with un increase
-#               medio del hourly wage di circa 0.54 dollari
-# beta0 = -0.90: hourly wage medio predetto per un individuo con
-#                zero years of education (scarso significato empirico)
+# Interpretation:
+# beta1 = 0.54: an additional year of education is associated with an average
+#               increase in hourly wage of approximately 0.54 dollars
+# beta0 = -0.90: predicted average hourly wage for an individual with
+#                zero years of education (little substantive meaning)

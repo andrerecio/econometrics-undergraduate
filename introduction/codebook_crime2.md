@@ -1,80 +1,80 @@
 # Codebook
 
-## Identificativi
+## Identifiers
 
-| Variabile  | Descrizione                              |
+| Variable   | Description                              |
 |------------|------------------------------------------|
 | `name`     | City name                         |
 | `city`     | City ID                           |
 | `jid`      | Unique city identifier       |
-| `statenam` | Stato (abbreviazione a 2 lettere)        |
-| `state`    | Codice dello stato (2 cifre, non-FIPS)   |
-| `year`     | Anno (4 cifre)                           |
+| `statenam` | State (2-letter abbreviation)            |
+| `state`    | State code (2 digits, non-FIPS)          |
+| `year`     | Year (4 digits)                          |
 
 ## Crime (FBI UCR CUS)
 
-| Variabile  | Descrizione                              |
+| Variable   | Description                              |
 |------------|------------------------------------------|
-| `murder`   | Omicidi e omicidi colposi non colpevoli  |
-| `rape`     | Stupri                                   |
-| `robbery`  | Rapine                                   |
-| `assault`  | Aggressioni aggravate                    |
-| `burglary` | Furti con scasso                         |
-| `larceny`  | Furti semplici                           |
-| `auto`     | Furti di veicoli a motore                |
+| `murder`   | Murders and non-negligent manslaughters  |
+| `rape`     | Rapes                                    |
+| `robbery`  | Robberies                                |
+| `assault`  | Aggravated assaults                      |
+| `burglary` | Burglaries                               |
+| `larceny`  | Larcenies                                |
+| `auto`     | Motor vehicle thefts                     |
 
-## Polizia (FBI UCR CUS)
+## Police (FBI UCR CUS)
 
-| Variabile  | Descrizione                              |
+| Variable   | Description                              |
 |------------|------------------------------------------|
-| `sworn`    | Numero di agenti giurati                 |
-| `civil`    | Numero di impiegati civili               |
+| `sworn`    | Number of sworn officers                 |
+| `civil`    | Number of civilian employees             |
 
 ## Elections and political variables
 
-| Variabile  | Descrizione                                          |
+| Variable   | Description                                          |
 |------------|------------------------------------------------------|
-| `elecyear` | Indicatore anno elettorale (sindaco)                 |
-| `mayor`    | Indicatore anno elettorale (sindaco)                 |
-| `governor` | Indicatore anno elettorale (governatore)             |
-| `term2`    | Indicatore mandato sindacale di 2 anni               |
-| `term3`    | Indicatore mandato sindacale di 3 anni               |
-| `term4`    | Indicatore mandato sindacale di 4 anni               |
-| `termlim`  | Governatore non ricandidabile (Anne Case)            |
-| `date_wa`  | Data prossime elezioni (World Almanac)               |
-| `date_my`  | Data prossime elezioni (Municipal Yearbook)          |
-| `web`      | Date elettorali validate via web                     |
+| `elecyear` | Election year indicator (mayor)                      |
+| `mayor`    | Election year indicator (mayor)                      |
+| `governor` | Election year indicator (governor)                   |
+| `term2`    | 2-year mayoral term indicator                        |
+| `term3`    | 3-year mayoral term indicator                        |
+| `term4`    | 4-year mayoral term indicator                        |
+| `termlim`  | Governor cannot run for reelection (Anne Case)       |
+| `date_wa`  | Date of next election (World Almanac)                |
+| `date_my`  | Date of next election (Municipal Yearbook)           |
+| `web`      | Election dates validated via web                     |
 
-## Demografia
+## Demographics
 
-| Variabile   | Descrizione                                                   |
+| Variable    | Description                                                   |
 |-------------|---------------------------------------------------------------|
 | `citypop`   | City population (FBI UCR, Arrests tape)               |
-| `citybla`   | Share of Black population in the city (interpolata)              |
-| `cityfemh`  | Quota nuclei con capofamiglia woman nella città (interpolata) |
-| `a0_5`      | SMSA population share di età 0–4                             |
-| `a5_9`      | SMSA population share di età 5–9                             |
-| `a10_14`    | SMSA population share di età 10–14                           |
-| `a15_19`    | SMSA population share di età 15–19                           |
-| `a20_24`    | SMSA population share di età 20–24                           |
-| `a25_29`    | SMSA population share di età 25–29                           |
+| `citybla`   | Share of Black population in the city (interpolated)          |
+| `cityfemh`  | Share of female-headed households in the city (interpolated)  |
+| `a0_5`      | SMSA population share aged 0–4                                |
+| `a5_9`      | SMSA population share aged 5–9                                |
+| `a10_14`    | SMSA population share aged 10–14                              |
+| `a15_19`    | SMSA population share aged 15–19                              |
+| `a20_24`    | SMSA population share aged 20–24                              |
+| `a25_29`    | SMSA population share aged 25–29                              |
 
-## Variabili economiche
+## Economic variables
 
-| Variabile   | Descrizione                                          |
+| Variable    | Description                                          |
 |-------------|------------------------------------------------------|
-| `rincpc`    | Reddito reale pro capite statale                     |
-| `econgrow`  | Crescita economica: Δlog(reddito reale pro capite)   |
-| `unemp`     | Tasso di disoccupazione statale                      |
-| `price`     | IPC (Economic Report of the President)               |
+| `rincpc`    | State real income per capita                         |
+| `econgrow`  | Economic growth: Δlog(real income per capita)        |
+| `unemp`     | State unemployment rate                              |
+| `price`     | CPI (Economic Report of the President)               |
 
-## Spesa pubblica statale e locale
+## State and local government spending
 
-| Variabile   | Descrizione                                                    |
+| Variable    | Description                                                    |
 |-------------|----------------------------------------------------------------|
-| `sta_educ`  | Spesa reale pro capite per education (stato + enti locali)   |
-| `sta_welf`  | Spesa reale pro capite per welfare (stato + enti locali)      |
+| `sta_educ`  | Real per capita spending on education (state + local governments) |
+| `sta_welf`  | Real per capita spending on welfare (state + local governments)   |
 
 ---
 
-**Note:** The variables `jid`, `mayor`, `date_wa`, `date_my` e `web` come from McCrary (2002). The remaining variables da Levitt (1997).
+**Note:** The variables `jid`, `mayor`, `date_wa`, `date_my`, and `web` come from McCrary (2002). The remaining variables come from Levitt (1997).

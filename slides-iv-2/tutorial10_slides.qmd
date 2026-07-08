@@ -1,16 +1,16 @@
 ---
 title: Tutorial 10
-subtitle: Regression with instrumental variables (Parte 2)
+subtitle: Regression with instrumental variables (Part 2)
 format: clean-typst
 author:
-  - name: Econometria I
+  - name: Econometrics I
     email:
-    affiliations: Sapienza Università di Roma
+    affiliations: Sapienza University of Rome
 date: today
 date-format: long
 brand:
-  typography: 
-    fonts: 
+  typography:
+    fonts:
       - family: Roboto
         weight: [light, bold]
         source: google
@@ -18,10 +18,10 @@ execute:
   echo: true
   warning: false
   message: false
-  error: false        
+  error: false
 ---
 
-# Angrist e Evans (1998)
+# Angrist and Evans (1998)
 
 ## Dataset "labsup"
 
@@ -33,28 +33,28 @@ library(modelsummary)
 data("labsup", package = "wooldridge")
 ```
 
-- $hours$: ore di lavoro settimanali della madre
-- $kids$: numero di figli
+- $hours$: mother's weekly hours worked
+- $kids$: number of children
 - $educ$: years of education
-- $age$: età in anni compiuti
+- $age$: age in years
 - $black$: dummy
 - $hispan$: dummy
-- $samesex$: **dummy variable =1 se i primi due figli sono dello stesso gender**
-- $multi2nd$: **dummy variable =1 se il secondo parto è gemellare**
+- $samesex$: **dummy variable = 1 if the first two children are of the same sex**
+- $multi2nd$: **dummy variable = 1 if the second birth produced twins**
 
 
-## Regressione OLS (Esercizio)
+## OLS Regression (Exercise)
 
-Regressione delle ore lavorate (settimanali) sul numero di figli
+Regression of (weekly) hours worked on the number of children
 
 ```{r}
 library(fixest)
 ols_labsup <- feols(hours ~ kids + educ + age + black + hispan, data = labsup, vcov = "hetero")
 ```
 
-- Come si interpreta il coefficient associato a $kids$ e $educ$?
+- How should the coefficients on $kids$ and $educ$ be interpreted?
 
-## Regressione OLS (Esercizio)
+## OLS Regression (Exercise)
 
 ::: {.slide .center .large}
 ```{r}
@@ -65,32 +65,32 @@ modelsummary(list("Hours" = ols_labsup), gof_omit = "AIC|BIC|RMSE|R2 Adj.|R2")
 
 :::
 
-- Avere un figlio in più is associated withd una riduzione, on average, di 2.254 ore settimanali lavorate. A parità delle altre variabili
-- An additional year di education is associated withd un increase, on average, di 0.509 ore lavorate. A parità delle altre variabili.
+- Having one additional child is associated with a reduction, on average, of 2.254 weekly hours worked, holding the other variables constant
+- An additional year of education is associated with an increase, on average, of 0.509 hours worked, holding the other variables constant.
 
 
 ## Regression with instrumental variables
 
-### Validità
+### Validity
 
-- La instrumental variable (o "instrument") $Z$ deve soddisfare le seguenti condizioni:
-  
-  1. **Rilevanza:**  $cor(Z_i, X_i) \neq 0$
-  2. **Esogeneità:** $cor(Z_i, u_i) = 0$
+- The instrumental variable (or "instrument") $Z$ must satisfy the following conditions:
 
-
-- Nel caso di Angrist e Evans (1999), lo instrument $samesex$:
-  1. Avere i primi due figli dello stesso gender deve essere associato ad un maggiore numero di figli
-  2. Avere i primi due figli dello stesso gender non deve influenzare dilinemente l'offerta di lavoro (la composizione dei figli, due maschi o due femmini non dovrebbe essere associato a diversa offerta di lavoro. Ad esempio a un maschio e una femmina)
-   
+  1. **Relevance:**  $cor(Z_i, X_i) \neq 0$
+  2. **Exogeneity:** $cor(Z_i, u_i) = 0$
 
 
+- In the case of Angrist and Evans (1998), the instrument $samesex$:
+  1. Having the first two children of the same sex must be associated with a larger number of children
+  2. Having the first two children of the same sex must not directly affect labor supply (the sex composition of the children—two boys or two girls—should not be associated with a different labor supply than, for example, one boy and one girl)
 
-## Regressioni con instrumental variables
 
-### Validità
 
-La prima condizione può essere testata (come vedremo nel first stage). La seconda riguarda la covarianza tra $Z$ e l'errore non osservato $u$. Generalmente non possiamo testare questa assunzione e in molti casi assumiamo $Cov(Z, u) = 0$ basandoci sul ragionamento (ad esempio teoria). Testeremo le "restrizioni da overidentification".
+
+## Regressions with instrumental variables
+
+### Validity
+
+The first condition can be tested (as we will see in the first stage). The second concerns the covariance between $Z$ and the unobserved error $u$. Generally, we cannot test this assumption, and in many cases we assume $Cov(Z, u) = 0$ based on reasoning (for example, theory). We will test the "overidentifying restrictions".
 
 ## TSLS
 
@@ -98,13 +98,13 @@ La prima condizione può essere testata (come vedremo nel first stage). La secon
 iv_labsup <- feols(hours ~ educ + age + black + hispan | kids ~ samesex, data = labsup, vcov = "hetero")
 ```
 
-- Stima un model IV in cui $kids$ è la endogenous variable, strumentata con $samesex$.
+- Estimates an IV model in which $kids$ is the endogenous variable, instrumented with $samesex$.
 
-- Nel first stage regredisce l'endogena sullo instrument ($kids$ su $samsex$) e le altre variabili esogene
+- In the first stage, it regresses the endogenous variable on the instrument ($kids$ on $samesex$) and the other exogenous variables
 
-- Nel second stage regredisce la dependent variable sui predicted values del first stage (hours su $\hat{kids}$ e le altre variabili)
+- In the second stage, it regresses the dependent variable on the predicted values from the first stage ($hours$ on $\hat{kids}$ and the other variables)
 
-- Gli standard errors tengono conto della estimate nel first stage
+- The standard errors account for the first-stage estimation
 
 
 ## TSLS Results ($samesex$ instrument)
@@ -119,85 +119,85 @@ modelsummary(list("Hours" = iv_labsup), gof_omit = "AIC|BIC|RMSE|R2 Adj.|R2")
 :::
 
 
-## TSLS (Primo Stadio)
+## TSLS (First Stage)
 ```{r}
 summary(iv_labsup , stage = 1)
 ```
 
-## TSLS (Primo Stadio)
+## TSLS (First Stage)
 
 ```{r}
 fs_labsup <- feols(kids ~ samesex + educ + age + black + hispan, data = labsup, vcov = "hetero")
 fs_labsup
 ```
 
-## TSLS (Secondo Stadio)
+## TSLS (Second Stage)
 
 ```{r}
 labsup$kids_hat <- predict(fs_labsup)
 feols(hours ~ kids_hat + educ + age + black + hispan, data = labsup, vcov = "hetero")
 ```
 
-- Con questa procedura otteniamo gli stessi risultati di `iv_labsup`. Ma gli standard errors **non** sono corretti (non tengono conto della estimate nel first stage)
+- With this procedure we obtain the same results as `iv_labsup`. But the standard errors are **not** correct (they do not account for the first-stage estimation)
 
 
-## Rilevanza dello instrument
+## Instrument Relevance
 
-- Calcoliamo la statistica $F$ per la verifica dell'ipotesi che i coefficients degli instruments siano tutti 0 nel **first stage** della regressione TSLS
+- We compute the $F$ statistic to test the hypothesis that the coefficients on the instruments are all 0 in the **first stage** of the TSLS regression
 
-- Una statistica $F < 10$ indica che gli instruments sono deboli (Staicker and Stock, 1997; Stock and Yogo, 2005),
+- An $F$ statistic $< 10$ indicates that the instruments are weak (Staiger and Stock, 1997; Stock and Yogo, 2005),
 
-- Non è la statistica $F$ complessiva, ma testiamo che congiuntamente i coefficients degli instruments siano uguali a zero
+- It is not the overall $F$ statistic; rather, we jointly test that the coefficients on the instruments are equal to zero
 
-- Se la statistica Wald del first stage è minore di $m \times 10$, allora l’insieme degli instruments è debole. **Note: Wald = $m \times F$**
-  
-- Alcuni studi suggeriscono valori critici più alti o altri test (Montiel Olea and Pfluegger, 2013; Kleibergen-Paap rk statistics)
+- If the first-stage Wald statistic is less than $m \times 10$, then the set of instruments is weak. **Note: Wald = $m \times F$**
+
+- Some studies suggest higher critical values or other tests (Montiel Olea and Pflueger, 2013; Kleibergen-Paap rk statistics)
 
 
-## Rilevanza dello instrument
+## Instrument Relevance
 
 ```{r}
 library(car)
 linearHypothesis(fs_labsup , "samesex=0")
 ```
 
-- La statistica Wald è pari a 48.758 > a 1*10
+- The Wald statistic equals 48.758 > 1*10
 
 
-## Rilevanza dello instrument (F)
+## Instrument Relevance (F)
 
 ```{r}
 linearHypothesis(fs_labsup , "samesex=0", test="F")
 ```
 
 
-## `multi2nd` (secondo parto gemellare) come instrument
+## `multi2nd` (twin second birth) as an instrument
 
 ```{r}
 iv_labsup <- feols(hours ~ educ + age + black + hispan | kids ~ multi2nd, data = labsup, vcov = "hetero")
 iv_labsup
 ```
 
-Rilevanza ed exogeneity in questo caso:
+Relevance and exogeneity in this case:
 
-- **Rilevanza:** secondo parto gemellare deve essere essere associato ad un maggiore numero di figli
-- **Esogeneità:** Avere un secondo parto gemellare non deve influenzare dilinemente l'offerta di lavoro della madre
+- **Relevance:** a twin second birth must be associated with a larger number of children
+- **Exogeneity:** Having a twin second birth must not directly affect the mother's labor supply
 
 
 
-## Rilevanza dello instrument (2 instruments)
-Calcoliamo il first stage della regressione:
+## Instrument Relevance (2 instruments)
+We compute the first stage of the regression:
 
 ```{r}
 fs_labsup_overid <- feols(kids ~ samesex + multi2nd + educ + age + black + hispan, data = labsup, vcov = "hetero")
 ```
 
-Testiamo la relevance di entrambi gli instruments: $multi2nd$ e $samesex$
+We test the relevance of both instruments: $multi2nd$ and $samesex$
 
 
 234.72 > 2*10
 
-## Rilevanza dello instrument (2 instruments)
+## Instrument Relevance (2 instruments)
 
 ```{r}
 linearHypothesis(fs_labsup_overid, c("samesex=0", "multi2nd=0"))
@@ -205,31 +205,31 @@ linearHypothesis(fs_labsup_overid, c("samesex=0", "multi2nd=0"))
 
 
 
-## Restrizioni da Sovraidentificazione
-###  J di Sargan
+## Overidentifying Restrictions
+###  Sargan's J
 
-Quando il numero di instruments disponibili $m$ è maggiore del numero di endogenous variables $k$, il model è sovraidentificato.
+When the number of available instruments $m$ is greater than the number of endogenous variables $k$, the model is overidentified.
 
-- $H_0$: tutti gli instruments sono esogeni
-- $H_1$: almeno uno degli instruments è endogeno
+- $H_0$: all instruments are exogenous
+- $H_1$: at least one instrument is endogenous
 
 
-## J di Sargan
+## Sargan's J
 
 ### Procedure
 
-1. Stimiano la regressione TSLS
-2. Si ottengono i residuals della regressione TSLS:  
+1. Estimate the TSLS regression
+2. Obtain the residuals of the TSLS regression:
    $\hat{u}_i = Y_i - \hat{Y}_i$
-3. Si esegue una regressione dei residuals $\hat{u}_i$ sugli instruments $Z_1, \dots, Z_m$ e le variabili esogene $W_1, \dots, W_r$
-4. Se gli instruments fossero esogeni i coefficients degli instruments nella regressione di $\hat{u}_i$ dovrebbero essere uguali a zero (statisticamente non significativi)
-5. Si calcola come $J = mF$. Quindi $J = Wald$
-6. In grandi campioni si distribuisce come una chi-quadrato con $m-k$ degrees of freedom ($\chi_{m-k}$)
+3. Regress the residuals $\hat{u}_i$ on the instruments $Z_1, \dots, Z_m$ and the exogenous variables $W_1, \dots, W_r$
+4. If the instruments were exogenous, the coefficients on the instruments in the regression of $\hat{u}_i$ should be equal to zero (statistically insignificant)
+5. The statistic is computed as $J = mF$. Hence $J = Wald$
+6. In large samples it is distributed as a chi-squared with $m-k$ degrees of freedom ($\chi_{m-k}$)
 
-$m-k$ è il grado di overidentification ($k$ sono i regressori endogeni)
+$m-k$ is the degree of overidentification ($k$ is the number of endogenous regressors)
 
 
-## J di Sargan
+## Sargan's J
 
 ```{r}
 iv_labsup_overid <- feols(hours ~ educ + age + black + hispan | kids ~ samesex + multi2nd, data = labsup, vcov = "hetero")
@@ -241,33 +241,33 @@ Jlm <- feols(uhat~ samesex + multi2nd + educ +age + black + hispan, data = labsu
 ```
 
 
-## J di Sargan
+## Sargan's J
 
 ```{r}
 linearHypothesis(Jlm, c("samesex=0", "multi2nd=0"))
 ```
 
 
-## J di Sargan
+## Sargan's J
 
 ::: {.callout-important title="Warning"}
 
-Il test di overidentification restituisce una statistica 
+The overidentification test returns a statistic
 $J=0.583$.
 
-La statistica $J$ si distribuisce come una $\chi^2_{(m - k)}$ Nel nostro caso $m -k = 1$​. Il valore da confrontare **non** è 6 ma **3.84** ($\alpha = 0.05$)
+The $J$ statistic is distributed as a $\chi^2_{(m - k)}$. In our case $m -k = 1$​. The value to compare against is **not** 6 but **3.84** ($\alpha = 0.05$)
 
-Quindi 0.583 < 3.84. Non rigetto $H_0$. Il p-value corretto è: 
+Thus 0.583 < 3.84. We do not reject $H_0$. The correct p-value is:
 
 ```{r}
 pchisq(0.583, df = 1, lower.tail = FALSE)
 ```
 
-o in modo equivalente `1 - pchisq(J$Chisq[2], df = 1)` quindi we do not reject l’null hypothesis di exogeneity degli instruments. **Non rigetto $H_0$. Tutti gli instruments sono esogeni.**
+or, equivalently, `1 - pchisq(J$Chisq[2], df = 1)`; thus we do not reject the null hypothesis that the instruments are exogenous. **We do not reject $H_0$. All instruments are exogenous.**
 :::
 
 
-## Regressione IV con due instruments
+## IV Regression with Two Instruments
 
 
 ::: {.slide .center .large}

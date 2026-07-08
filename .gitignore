@@ -32,13 +32,13 @@ Desktop.ini
 *~
 .directory
 
-# Logs e temporanei
+# Logs and temporary files
 *.log
 *.tmp
 *.bak
 *.swp
 
-# PDF (es. Rplots.pdf, output rendering)
+# PDF (e.g. Rplots.pdf, render output)
 *.pdf
 
 # all Claude Code files
