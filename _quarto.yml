@@ -55,6 +55,11 @@ website:
             href: problem-sets/problem_set_01_solutions.qmd
           - text: "Log Models Review"
             href: problem-sets/log_models_review.qmd
+    right:
+      - icon: github
+        href: https://github.com/andrerecio
+      - icon: envelope
+        href: mailto:andrea.recine@uniroma1.it
 
 execute:
   freeze: auto
