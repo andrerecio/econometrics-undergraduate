@@ -13,12 +13,10 @@ format:
 
 Materials for the tutorials of the undergraduate **Econometrics** course.
 
-### Installing R and RStudio
+## Installing R and RStudio
 
 1. Download and install **R** from [cran.r-project.org](https://cran.r-project.org).
 2. Download and install **RStudio** from [posit.co/download/rstudio-desktop](https://posit.co/download/rstudio-desktop).
-
----
 
 ## Introduction to R
 
@@ -26,8 +24,6 @@ Materials for the tutorials of the undergraduate **Econometrics** course.
 |----:|-------|-----------|
 | 1 | Introduction to R | [Slides](introduction/introduction.html) · [R Script](introduction/introduction.R) |
 | 2 | Regression with `fixest` | [Slides](introduction/regression_with_fixest.html) · [R Script](introduction/regression_with_fixest.R) |
-
----
 
 ## Tutorials
 
@@ -44,22 +40,11 @@ Materials for the tutorials of the undergraduate **Econometrics** course.
 | 9 | Regression with instrumental variables | [Notes](tutorial9/tutorial9.html) · [R Script](tutorial9/tutorial9_script.R) |
 | 10 | Regression with instrumental variables, part 2 | [Notes](tutorial10/tutorial10.html) · [R Script](tutorial10/tutorial10_script.R) |
 
----
+## Problem Sets & Reviews
 
-## Problem Sets
-
-| Questions | Solutions |
-|-----------|-----------|
-| [Problem Set 1](problem-sets/problem_set_01.html) | [Solutions](problem-sets/problem_set_01_solutions.html) |
-
----
-
-## Other Material
-
-| Simulation | Topics | Link |
-|------------|--------|------|
-| October 2025 | Review of log models | [HTML](problem-sets/log_models_review.html) |
-
----
+| Material | Links |
+|----------|-------|
+| Problem Set 1 | [Questions](problem-sets/problem_set_01.html) · [Solutions](problem-sets/problem_set_01_solutions.html) |
+| Review of log models (October 2025) | [Notes](problem-sets/log_models_review.html) |
 
 Report typos or errors by opening an [issue](https://github.com/andrerecio/econometrics-undergraduate/issues).
