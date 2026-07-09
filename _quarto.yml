@@ -61,9 +61,20 @@ execute:
 
 format:
   html:
-    theme: flatly
+    theme: [simplex, styles.scss]
     toc: true
+    toc-depth: 3
     toc-title: "Contents"
+    toc-location: right
+    number-sections: true
+    code-fold: false
+    code-tools: true
     code-copy: true
+    code-block-bg: true
+    code-block-border-left: false
+    highlight-style: github
+    embed-resources: true
+    fontsize: 1.1em
+    linestretch: 1.6
 
 lang: en

@@ -4,44 +4,6 @@ subtitle: "Regression with Panel Data"
 author: "Andrea Recine"
 date: today
 lang: en
-
-format:
-  html:
-    # Layout
-    theme: flatly
-    toc: true
-    toc-depth: 3
-    toc-title: "Contents"
-    toc-location: right
-    number-sections: true
-
-    # Code
-    code-fold: false
-    code-tools: true
-    code-copy: true
-    code-block-bg: true
-    code-block-border-left: false
-    highlight-style: github
-
-    # Output
-    embed-resources: true
-
-    # Typography
-    fontsize: 1.1em
-    linestretch: 1.6
-
-execute:
-  warning: false
-  message: false
-  echo: true
-
-knitr:
-  opts_chunk:
-    comment: "#>"
-    fig.align: "center"
-    fig.width: 7
-    fig.height: 4.5
-
 ---
 
 

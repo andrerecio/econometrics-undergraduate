@@ -1,0 +1,39 @@
+/*-- scss:defaults --*/
+
+@font-face {
+  font-family: 'Latin Modern Sans';
+  src: url('fonts/lmsans-regular-webfont.woff') format('woff');
+  font-weight: normal; font-style: normal;
+}
+@font-face {
+  font-family: 'Latin Modern Sans';
+  src: url('fonts/lmsans-bold-webfont.woff') format('woff');
+  font-weight: bold; font-style: normal;
+}
+@font-face {
+  font-family: 'Latin Modern Sans';
+  src: url('fonts/lmsans-oblique-webfont.woff') format('woff');
+  font-weight: normal; font-style: oblique;
+}
+@font-face {
+  font-family: 'Latin Modern Mono';
+  src: url('fonts/lmmono-regular-webfont.woff') format('woff');
+  font-weight: normal; font-style: normal;
+}
+
+// font
+$font-family-sans-serif: "Latin Modern Sans";
+$font-family-monospace: "Latin Modern Mono", monospace;
+
+// colori (accento neutro, niente rosso)
+$link-color: #2A5599;
+$code-color: #333333;
+$code-bg: #f7f7f7;
+
+/*-- scss:rules --*/
+ul { list-style-type: square; }
+.math.inline, .math.display { font-size: 84%; }
+
+// classi utili per evidenziare testo
+.blue { color: #2A5599; font-weight: bold; }
+.grey { color: #a3acb9; font-weight: bold; }

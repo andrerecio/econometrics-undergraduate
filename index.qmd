@@ -5,20 +5,13 @@ lang: en
 
 format:
   html:
-    theme: cosmo
     toc: false
-    embed-resources: true
+    number-sections: false
     fontsize: 1.25em
     linestretch: 1.7
 ---
 
 Materials for the tutorials of the undergraduate **Econometrics** course.
-
-### Google Classroom
-
-Further course announcements about tutorials, simulations, and related material will be posted on [Google Classroom](https://classroom.google.com/). Access code for Sapienza student accounts: `5na2ra5n`.
-
----
 
 ### Installing R and RStudio
 
@@ -31,8 +24,8 @@ Further course announcements about tutorials, simulations, and related material 
 
 | No. | Topic | Materials |
 |----:|-------|-----------|
-| 1 | Introduction to R | [Slidess](introduction/introduction.html) · [R Script](introduction/introduction.R) |
-| 2 | Regression with `fixest` | [Slidess](introduction/regression_with_fixest.html) · [R Script](introduction/regression_with_fixest.R) |
+| 1 | Introduction to R | [Slides](introduction/introduction.html) · [R Script](introduction/introduction.R) |
+| 2 | Regression with `fixest` | [Slides](introduction/regression_with_fixest.html) · [R Script](introduction/regression_with_fixest.R) |
 
 ---
 

@@ -1,14 +1,6 @@
 ---
 title: "Review of log models"
 author: "Andrea Recine"
-format:
-  html:
-    toc: true
-    code-fold: false
-    embed-resources: true
-execute:
-  warning: false
-  message: false
 ---
 
 **Required packages:**
