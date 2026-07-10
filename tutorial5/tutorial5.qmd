@@ -4,6 +4,11 @@ subtitle: "Nonlinearity: interactions"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "Interaction terms: dummy and continuous interactions with marginaleffects (wage1)."
+code-links:
+  - text: R Script
+    icon: file-code
+    href: tutorial5_script.R
 ---
 
 ## Setup

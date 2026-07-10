@@ -4,6 +4,11 @@ subtitle: "Regression with instrumental variables (IV)"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "Instrumental variables and 2SLS: the Card (1995) returns-to-schooling study (card)."
+code-links:
+  - text: R Script
+    icon: file-code
+    href: tutorial9_script.R
 ---
 
 # Regression with instrumental variables

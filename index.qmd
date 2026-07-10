@@ -9,6 +9,36 @@ format:
     number-sections: false
     fontsize: 1.25em
     linestretch: 1.7
+
+listing:
+  - id: tutorials
+    type: grid
+    grid-columns: 3
+    sort: false
+    fields: [title, description]
+    contents:
+      - tutorial1/tutorial1.qmd
+      - tutorial2/tutorial2.qmd
+      - tutorial3/tutorial3.qmd
+      - tutorial4/tutorial4.qmd
+      - tutorial5/tutorial5.qmd
+      - tutorial6/tutorial6.qmd
+      - tutorial7/tutorial7.qmd
+      - tutorial8/tutorial8.qmd
+      - tutorial9/tutorial9.qmd
+      - tutorial10/tutorial10.qmd
+  - id: problem-sets
+    type: grid
+    grid-columns: 3
+    sort: false
+    fields: [title, description]
+    contents:
+      - path: problem-sets/problem_set_01.qmd
+        title: "Problem Set 1 — Questions"
+      - path: problem-sets/problem_set_01_solutions.qmd
+        title: "Problem Set 1 — Solutions"
+      - path: problem-sets/log_models_review.qmd
+        title: "Review of Log Models"
 ---
 
 Materials for the tutorials of the undergraduate **Econometrics** course.
@@ -20,31 +50,17 @@ Materials for the tutorials of the undergraduate **Econometrics** course.
 
 ## Introduction to R
 
-| No. | Topic | Materials |
-|----:|-------|-----------|
-| 1 | Introduction to R | [Slides](introduction/introduction.html) · [R Script](introduction/introduction.R) |
-| 2 | Regression with `fixest` | [Slides](introduction/regression_with_fixest.html) · [R Script](introduction/regression_with_fixest.R) |
+- **Introduction to R** — [Slides](introduction/introduction.html) · [R Script](introduction/introduction.R)
+- **Regression with `fixest`** — [Slides](introduction/regression_with_fixest.html) · [R Script](introduction/regression_with_fixest.R)
 
 ## Tutorials
 
-| No. | Topic | Materials |
-|----:|-------|-----------|
-| 1 | Regression, dummy variables, and confidence intervals | [Notes](tutorial1/tutorial1.html) · [R Script](tutorial1/tutorial1_script.R) |
-| 2 | Multiple regression | [Notes](tutorial2/tutorial2.html) · [R Script](tutorial2/tutorial2_script.R) |
-| 3 | Nonlinearity: log specifications | [Notes](tutorial3/tutorial3.html) · [R Script](tutorial3/tutorial3_script.R) |
-| 4 | Nonlinearity: polynomials | [Notes](tutorial4/tutorial4.html) · [R Script](tutorial4/tutorial4_script.R) |
-| 5 | Nonlinearity: interactions | [Notes](tutorial5/tutorial5.html) · [R Script](tutorial5/tutorial5_script.R) |
-| 6 | Linear Probability Model (LPM) | [Notes](tutorial6/tutorial6.html) · [R Script](tutorial6/tutorial6_script.R) |
-| 7 | Probit and Logit | [Notes](tutorial7/tutorial7.html) · [R Script](tutorial7/tutorial7_script.R) |
-| 8 | Regression with panel data | [Notes](tutorial8/tutorial8.html) · [R Script](tutorial8/tutorial8_script.R) |
-| 9 | Regression with instrumental variables | [Notes](tutorial9/tutorial9.html) · [R Script](tutorial9/tutorial9_script.R) |
-| 10 | Regression with instrumental variables, part 2 | [Notes](tutorial10/tutorial10.html) · [R Script](tutorial10/tutorial10_script.R) |
+::: {#tutorials}
+:::
 
 ## Problem Sets & Reviews
 
-| Material | Links |
-|----------|-------|
-| Problem Set 1 | [Questions](problem-sets/problem_set_01.html) · [Solutions](problem-sets/problem_set_01_solutions.html) |
-| Review of log models (October 2025) | [Notes](problem-sets/log_models_review.html) |
+::: {#problem-sets}
+:::
 
 Report typos or errors by opening an [issue](https://github.com/andrerecio/econometrics-undergraduate/issues).

@@ -4,6 +4,11 @@ subtitle: "Probit and Logit Models"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "Probit and logit models: average marginal effects and model comparison (crime1, alcohol)."
+code-links:
+  - text: R Script
+    icon: file-code
+    href: tutorial7_script.R
 ---
 
 ## Setup

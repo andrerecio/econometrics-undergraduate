@@ -26,15 +26,17 @@
 $font-family-sans-serif: "Latin Modern Sans";
 $font-family-monospace: "Latin Modern Mono", monospace;
 
-// colors (neutral accent)
-$link-color: #2A5599;
-$code-color: #333333;
-$code-bg: #f7f7f7;
+// dark-mode colors (adapted from the light styles.scss accents)
+$body-bg: #1a1c20;
+$body-color: #dee2e6;
+$link-color: #7aa5d8;
+$code-color: #e0e0e0;
+$code-bg: #23262b;
 
 /*-- scss:rules --*/
 ul { list-style-type: square; }
 .math.inline, .math.display { font-size: 84%; }
 
 // utility classes for highlighting text
-.blue { color: #2A5599; font-weight: bold; }
+.blue { color: #7aa5d8; font-weight: bold; }
 .grey { color: #a3acb9; font-weight: bold; }
