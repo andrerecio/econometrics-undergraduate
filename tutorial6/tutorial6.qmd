@@ -4,6 +4,11 @@ subtitle: "Linear Probability Model (LPM)"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "The Linear Probability Model for binary outcomes (alcohol, crime1)."
+code-links:
+  - text: R Script
+    icon: file-code
+    href: tutorial6_script.R
 ---
 
 ## Setup

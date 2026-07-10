@@ -4,6 +4,11 @@ subtitle: "Nonlinearity: logarithms"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "Log specifications: interpretation, units of measurement, and dummies with logs (wage1, campus)."
+code-links:
+  - text: R Script
+    icon: file-code
+    href: tutorial3_script.R
 ---
 
 

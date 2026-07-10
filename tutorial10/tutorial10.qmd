@@ -4,6 +4,11 @@ subtitle: "Regression with instrumental variables (part 2)"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "IV part 2: the Angrist & Evans (1998) samesex instrument for fertility and labor supply (labsup)."
+code-links:
+  - text: R Script
+    icon: file-code
+    href: tutorial10_script.R
 ---
 
 

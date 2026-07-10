@@ -4,6 +4,11 @@ subtitle: "Nonlinearity: polynomials"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "Polynomial regressions: quadratic terms, marginal effects, and mean-centering (wage1)."
+code-links:
+  - text: R Script
+    icon: file-code
+    href: tutorial4_script.R
 ---
 
 

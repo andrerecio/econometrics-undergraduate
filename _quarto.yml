@@ -9,24 +9,42 @@ project:
     - "!problem-sets/problem_set_02.qmd"
     - "!problem-sets/college_gpa_problem_set.qmd"
     - "!slides-iv-2/*.qmd"
+  resources:
+    - "tutorial*/*_script.R"
+    - "introduction/*.R"
+    - fonts
 
 website:
   title: "Undergraduate Econometrics"
   site-url: "https://andrearecine.me/econometrics-undergraduate/"
   repo-url: "https://github.com/andrerecio/econometrics-undergraduate"
   repo-actions: [issue]
+  favicon: favicon.png
+  open-graph: true
+  search: true
+  page-navigation: true
+  back-to-top-navigation: true
   navbar:
     left:
       - text: "Home"
         href: index.qmd
-      - text: "Introduction"
-        menu:
+    right:
+      - icon: github
+        href: https://github.com/andrerecio
+      - icon: envelope
+        href: mailto:andrea.recine@uniroma1.it
+  sidebar:
+    style: docked
+    collapse-level: 1
+    contents:
+      - section: "Introduction"
+        contents:
           - text: "Introduction to R"
             href: introduction/introduction.qmd
           - text: "Regression with fixest"
             href: introduction/regression_with_fixest.qmd
-      - text: "Tutorials"
-        menu:
+      - section: "Tutorials"
+        contents:
           - text: "Tutorial 1"
             href: tutorial1/tutorial1.qmd
           - text: "Tutorial 2"
@@ -47,26 +65,23 @@ website:
             href: tutorial9/tutorial9.qmd
           - text: "Tutorial 10"
             href: tutorial10/tutorial10.qmd
-      - text: "Problem Sets"
-        menu:
+      - section: "Problem Sets & Reviews"
+        contents:
           - text: "Problem Set 1"
             href: problem-sets/problem_set_01.qmd
-          - text: "Problem Set 1 Solutions"
+          - text: "Problem Set 1 — Solutions"
             href: problem-sets/problem_set_01_solutions.qmd
           - text: "Log Models Review"
             href: problem-sets/log_models_review.qmd
-    right:
-      - icon: github
-        href: https://github.com/andrerecio
-      - icon: envelope
-        href: mailto:andrea.recine@uniroma1.it
 
 execute:
   freeze: auto
 
 format:
   html:
-    theme: [simplex, styles.scss]
+    theme:
+      light: [cosmo, styles.scss]
+      dark: [cosmo, styles-dark.scss]
     toc: true
     toc-depth: 3
     toc-title: "Contents"
@@ -78,7 +93,8 @@ format:
     code-block-bg: true
     code-block-border-left: false
     highlight-style: github
-    embed-resources: true
+    lightbox: true
+    date-modified: last-modified
     fontsize: 1.1em
     linestretch: 1.6
 

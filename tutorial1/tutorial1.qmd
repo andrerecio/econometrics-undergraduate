@@ -4,6 +4,11 @@ subtitle: "Simple Linear Regression"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "Simple linear regression, dummy variables, and confidence intervals with the wage1 dataset."
+code-links:
+  - text: R Script
+    icon: file-code
+    href: tutorial1_script.R
 ---
 
 ## Introduction

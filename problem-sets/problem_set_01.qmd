@@ -4,6 +4,7 @@ subtitle: "Questions"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "Seven exercises on multiple regression, quadratics, binary outcomes, and panel data."
 ---
 
 # Problem Set 1

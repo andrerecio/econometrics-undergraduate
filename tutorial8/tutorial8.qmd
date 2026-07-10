@@ -4,6 +4,11 @@ subtitle: "Regression with Panel Data"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "Panel data: pooled OLS, first differences, and fixed effects with feols (wagepan, crime2)."
+code-links:
+  - text: R Script
+    icon: file-code
+    href: tutorial8_script.R
 ---
 
 

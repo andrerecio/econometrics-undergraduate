@@ -4,6 +4,7 @@ subtitle: "Solutions"
 author: "Andrea Recine"
 date: today
 lang: en
+description: "Full worked solutions to Problem Set 1."
 ---
 
 # Problem Set 1
