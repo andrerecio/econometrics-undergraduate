@@ -1,42 +1,52 @@
 /*-- scss:defaults --*/
 
+// disable cosmo's Google Fonts @import (privacy/GDPR — all fonts are self-hosted)
+$web-font-path: false;
 
-@font-face {
-  font-family: 'Latin Modern Sans';
-  src: url('fonts/lmsans-regular-webfont.woff') format('woff');
-  font-weight: normal; font-style: normal;
-}
-@font-face {
-  font-family: 'Latin Modern Sans';
-  src: url('fonts/lmsans-bold-webfont.woff') format('woff');
-  font-weight: bold; font-style: normal;
-}
-@font-face {
-  font-family: 'Latin Modern Sans';
-  src: url('fonts/lmsans-oblique-webfont.woff') format('woff');
-  font-weight: normal; font-style: oblique;
-}
-@font-face {
-  font-family: 'Latin Modern Mono';
-  src: url('fonts/lmmono-regular-webfont.woff') format('woff');
-  font-weight: normal; font-style: normal;
-}
+// editorial palette (dark)
+$accent:       #c97a8a;  // lightened garnet — 5.43:1 on $paper (AA)
+$accent-hover: #d18f9d;  // 6.65:1 — hover lightens in dark mode
+$paper:        #1d1b18;  // warm near-black
+$ink:          #e8e4dc;
+$muted-text:   #9a958a;  // 5.76:1 (AA)
+$muted-label:  #9a958a;
+$hairline:     #3a3733;
+$rule-strong:  #45413c;
+$code-surface: #26231f;
 
-// font
-$font-family-sans-serif: "Latin Modern Sans";
+// fonts
+$font-family-sans-serif: "Latin Modern Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
 $font-family-monospace: "Latin Modern Mono", monospace;
+$headings-font-family: "Source Serif 4", Georgia, serif;
+$headings-font-weight: 600;
 
-// dark-mode colors (adapted from the light styles.scss accents)
-$body-bg: #1a1c20;
-$body-color: #dee2e6;
-$link-color: #7aa5d8;
-$code-color: #e0e0e0;
-$code-bg: #23262b;
+// bootstrap / quarto variables
+$body-bg: $paper;
+$body-color: $ink;
+$link-color: $accent;
+$link-hover-color: $accent-hover;
+$link-decoration: none;
+$link-hover-decoration: underline;
+$text-muted: $muted-text;
+$border-color: $hairline;
+$table-border-color: $hairline;
+$table-striped-bg: transparent;
+$navbar-bg: $paper;
+$navbar-fg: $ink;
+$navbar-hl: $accent;
+$sidebar-bg: $paper;
+$sidebar-fg: $ink;
+$sidebar-hl: $accent;
+$code-block-bg: $code-surface;
+$code-bg: $code-surface;
+$code-color: #d6d2c8;
+
+// callouts: muted palette accents, garnet reserved for "important"
+$callout-color-note:      #a19c91;
+$callout-color-tip:       #8fa38a;
+$callout-color-caution:   #c4a86e;
+$callout-color-warning:   #c99a70;
+$callout-color-important: $accent;
 
 /*-- scss:rules --*/
-ul { list-style-type: square; }
-.math.inline, .math.display { font-size: 84%; }
-
-// utility classes for highlighting text
-.blue { color: #7aa5d8; font-weight: bold; }
-.grey { color: #a3acb9; font-weight: bold; }
+@import 'theme-shared';

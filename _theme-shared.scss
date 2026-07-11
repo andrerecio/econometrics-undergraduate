@@ -1,0 +1,157 @@
+// Structural rules shared by styles.scss (light) and styles-dark.scss (dark).
+// Palette variables ($accent, $hairline, ...) are defined in each theme's
+// scss:defaults before this file is imported into its scss:rules.
+
+// ---- self-hosted fonts ----
+@font-face {
+  font-family: 'Latin Modern Sans';
+  src: url('fonts/lmsans-regular-webfont.woff') format('woff');
+  font-weight: normal; font-style: normal;
+}
+@font-face {
+  font-family: 'Latin Modern Sans';
+  src: url('fonts/lmsans-bold-webfont.woff') format('woff');
+  font-weight: bold; font-style: normal;
+}
+@font-face {
+  font-family: 'Latin Modern Sans';
+  src: url('fonts/lmsans-oblique-webfont.woff') format('woff');
+  font-weight: normal; font-style: oblique;
+}
+@font-face {
+  font-family: 'Latin Modern Mono';
+  src: url('fonts/lmmono-regular-webfont.woff') format('woff');
+  font-weight: normal; font-style: normal;
+}
+@font-face {
+  font-family: 'Source Serif 4';
+  src: url('fonts/SourceSerif4-Regular.ttf.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Source Serif 4';
+  src: url('fonts/SourceSerif4-Semibold.ttf.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Source Serif 4';
+  src: url('fonts/SourceSerif4-It.ttf.woff2') format('woff2');
+  font-weight: 400; font-style: italic; font-display: swap;
+}
+
+// ---- headings ----
+h1, h2, .h1, .h2 { letter-spacing: -0.01em; }
+h1, .quarto-title .title {
+  border-bottom: 1px solid $rule-strong;
+  padding-bottom: 0.3em;
+}
+.header-section-number { color: $muted-label; font-weight: 400; }
+
+// ---- navbar ----
+.navbar {
+  border-bottom: 1px solid $hairline;
+  box-shadow: none;
+}
+.navbar-brand {
+  font-family: $headings-font-family;
+  font-weight: 600;
+}
+
+// ---- sidebar ----
+.sidebar-title { font-family: $headings-font-family; font-weight: 600; }
+.sidebar-item-section > .sidebar-item-container > a.sidebar-item-text {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 600;
+  color: $muted-label;
+}
+div.sidebar-item-container .active,
+a.sidebar-item-text.sidebar-link.active {
+  color: $accent;
+  font-weight: 600;
+}
+
+// ---- table of contents ----
+nav[role="doc-toc"] > h2#toc-title {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-family: $font-family-sans-serif;
+  font-weight: 600;
+  color: $muted-label;
+  border-bottom: none;
+}
+nav[role="doc-toc"] a.active {
+  color: $accent;
+  border-left-color: $accent;
+}
+
+// ---- code ----
+code { font-size: 0.9em; }
+div.sourceCode {
+  background-color: $code-block-bg;
+  border: 1px solid $hairline;
+}
+
+// ---- tables: hairline borders, no stripes ----
+.table > :not(caption) > * > * {
+  border-bottom-color: $hairline;
+  box-shadow: none;
+}
+.table > thead th { border-bottom-color: $rule-strong; }
+table.tinytable th, table.tinytable td { border-color: $rule-strong !important; }
+
+// ---- callouts: flat, hairline borders ----
+div.callout.callout-style-default {
+  border: 1px solid $hairline;
+  border-left-width: 5px;
+  box-shadow: none;
+}
+
+// ---- editorial listing (homepage) ----
+.editorial-list {
+  border-top: 1px solid $rule-strong;
+  margin-bottom: 2rem;
+}
+.editorial-item {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  column-gap: 1rem;
+  padding: 0.9rem 0.25rem;
+  border-bottom: 1px solid $hairline;
+  &:hover { background: rgba($accent, 0.03); }
+}
+.editorial-num {
+  font-family: $headings-font-family;
+  font-weight: 600;
+  color: $accent;
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.1rem;
+}
+a.editorial-title {
+  font-family: $headings-font-family;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: $body-color;
+  text-decoration: none;
+  &:hover { color: $accent; text-decoration: underline; }
+}
+.editorial-desc {
+  color: $muted-text;
+  font-size: 0.95rem;
+  margin-top: 0.15rem;
+}
+.editorial-script {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  a { color: $accent; }
+}
+
+// ---- misc ----
+ul { list-style-type: square; }
+.math.inline, .math.display { font-size: 84%; }
+
+// utility classes for highlighting text
+.blue { color: $accent; font-weight: bold; }
+.grey { color: $muted-label; font-weight: bold; }
