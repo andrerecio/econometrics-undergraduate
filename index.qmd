@@ -11,27 +11,45 @@ format:
     linestretch: 1.7
 
 listing:
-  - id: tutorials
-    type: grid
-    grid-columns: 3
+  - id: intro
+    template: editorial.ejs.md
     sort: false
-    fields: [title, description]
     contents:
-      - tutorial1/tutorial1.qmd
-      - tutorial2/tutorial2.qmd
-      - tutorial3/tutorial3.qmd
-      - tutorial4/tutorial4.qmd
-      - tutorial5/tutorial5.qmd
-      - tutorial6/tutorial6.qmd
-      - tutorial7/tutorial7.qmd
-      - tutorial8/tutorial8.qmd
-      - tutorial9/tutorial9.qmd
-      - tutorial10/tutorial10.qmd
-  - id: problem-sets
-    type: grid
-    grid-columns: 3
+      - path: introduction/introduction.qmd
+        title: "Introduction to R"
+        description: "First steps in R: objects, vectors, data frames, and basic plotting."
+        script: introduction/introduction.R
+      - path: introduction/regression_with_fixest.qmd
+        title: "Regression with fixest"
+        description: "Running and reading regressions in R with the fixest package."
+        script: introduction/regression_with_fixest.R
+  - id: tutorials
+    template: editorial.ejs.md
     sort: false
-    fields: [title, description]
+    contents:
+      - path: tutorial1/tutorial1.qmd
+        script: tutorial1/tutorial1_script.R
+      - path: tutorial2/tutorial2.qmd
+        script: tutorial2/tutorial2_script.R
+      - path: tutorial3/tutorial3.qmd
+        script: tutorial3/tutorial3_script.R
+      - path: tutorial4/tutorial4.qmd
+        script: tutorial4/tutorial4_script.R
+      - path: tutorial5/tutorial5.qmd
+        script: tutorial5/tutorial5_script.R
+      - path: tutorial6/tutorial6.qmd
+        script: tutorial6/tutorial6_script.R
+      - path: tutorial7/tutorial7.qmd
+        script: tutorial7/tutorial7_script.R
+      - path: tutorial8/tutorial8.qmd
+        script: tutorial8/tutorial8_script.R
+      - path: tutorial9/tutorial9.qmd
+        script: tutorial9/tutorial9_script.R
+      - path: tutorial10/tutorial10.qmd
+        script: tutorial10/tutorial10_script.R
+  - id: problem-sets
+    template: editorial.ejs.md
+    sort: false
     contents:
       - path: problem-sets/problem_set_01.qmd
         title: "Problem Set 1 — Questions"
@@ -50,8 +68,8 @@ Materials for the tutorials of the undergraduate **Econometrics** course.
 
 ## Introduction to R
 
-- **Introduction to R** — [Slides](introduction/introduction.html) · [R Script](introduction/introduction.R)
-- **Regression with `fixest`** — [Slides](introduction/regression_with_fixest.html) · [R Script](introduction/regression_with_fixest.R)
+::: {#intro}
+:::
 
 ## Tutorials
 
